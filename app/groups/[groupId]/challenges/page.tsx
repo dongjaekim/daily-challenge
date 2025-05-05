@@ -1,9 +1,6 @@
-import { ChallengeForm } from '@/components/challenges/ChallengeForm'
-import { ChallengeList } from '@/components/challenges/ChallengeList'
 import { ClientChallenges } from '@/components/challenges/ClientChallenges'
-import { auth } from '@clerk/nextjs'
 import { supabaseDb } from '@/db'
-import { getUserUuid } from '@/utils/server-auth'
+import { getSupabaseUuid } from '@/utils/server-auth'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -14,13 +11,7 @@ interface ChallengesPageProps {
 }
 
 export default async function ChallengesPage({ params }: ChallengesPageProps) {
-  const { userId: clerkUserId } = auth()
-  if (!clerkUserId) {
-    return notFound()
-  }
-
-  // clerk_id로 Supabase users 테이블에서 UUID 조회
-  const uuid = await getUserUuid(clerkUserId)
+  const uuid = await getSupabaseUuid()
   
   if (!uuid) {
     console.error("User UUID not found")

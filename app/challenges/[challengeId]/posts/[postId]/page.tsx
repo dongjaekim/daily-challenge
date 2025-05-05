@@ -1,14 +1,6 @@
-import { PostForm } from '@/components/posts/PostForm'
-import { CommentForm } from '@/components/posts/CommentForm'
-import { CommentList } from '@/components/posts/CommentList'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import { auth } from '@clerk/nextjs'
 import { supabaseDb } from '@/db'
-import { getUserUuid } from '@/utils/server-auth'
+import { getSupabaseUuid } from '@/utils/server-auth'
 import { notFound } from 'next/navigation'
-import { format } from 'date-fns'
-import { ko } from 'date-fns/locale'
 import { PostDetail } from '@/components/posts/PostDetail'
 import { supabase } from '@/lib/supabase'
 
@@ -20,13 +12,7 @@ interface PostPageProps {
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  const { userId: clerkUserId } = auth()
-  if (!clerkUserId) {
-    return notFound()
-  }
-
-  // clerk_id로 Supabase users 테이블에서 UUID 조회
-  const uuid = await getUserUuid(clerkUserId)
+  const uuid = await getSupabaseUuid()
   
   if (!uuid) {
     console.error("User UUID not found")
@@ -104,7 +90,7 @@ export default async function PostPage({ params }: PostPageProps) {
     created_at: postRaw.created_at,
     author: {
       id: author.id,
-      clerkId: clerkUserId, // 클라이언트에서 사용할 Clerk ID
+      clerkId: author.clerk_id, // 클라이언트에서 사용할 Clerk ID
       name: author.name
     },
     likes: likesArr.length,
@@ -125,7 +111,7 @@ export default async function PostPage({ params }: PostPageProps) {
         comments={formattedComments} 
         challengeId={params.challengeId} 
         postId={params.postId} 
-        currentUserId={clerkUserId}
+        currentUserId={uuid}
       />
     </div>
   )

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { auth } from '@clerk/nextjs'
 import { supabaseDb } from '@/db'
-import { getUserUuid } from '@/utils/server-auth'
+import { getSupabaseUuid } from '@/utils/server-auth'
 import { notFound } from 'next/navigation'
 
 interface ChallengePageProps {
@@ -14,13 +14,7 @@ interface ChallengePageProps {
 }
 
 export default async function ChallengePage({ params }: ChallengePageProps) {
-  const { userId: clerkUserId } = auth()
-  if (!clerkUserId) {
-    return notFound()
-  }
-
-  // clerk_id로 Supabase users 테이블에서 UUID 조회
-  const uuid = await getUserUuid(clerkUserId)
+  const uuid = await getSupabaseUuid()
   
   if (!uuid) {
     console.error("User UUID not found")

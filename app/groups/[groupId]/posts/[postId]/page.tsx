@@ -1,17 +1,13 @@
 import { Button } from '@/components/ui/button'
-import { auth } from '@clerk/nextjs'
 import { supabaseDb } from '@/db'
-import { getUserUuid } from '@/utils/server-auth'
+import { getSupabaseUuid } from '@/utils/server-auth'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { MessageSquare, ArrowLeft, User } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { ImageGallery } from '@/components/posts/ImageGallery'
-import { IPost } from '@/types'
 import { supabase } from '@/lib/supabase'
-import { LikeButton } from '@/components/posts/LikeButton'
-import { CommentList } from '@/components/posts/CommentList'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { PostDetail } from '@/components/posts/PostDetail'
 
@@ -29,14 +25,7 @@ interface PostPageProps {
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  const { userId: clerkUserId } = auth()
-  
-  if (!clerkUserId) {
-    return notFound()
-  }
-  
-  // clerk_id로 Supabase users 테이블에서 UUID 조회
-  const uuid = await getUserUuid(clerkUserId)
+  const uuid = await getSupabaseUuid()
   
   if (!uuid) {
     console.error("User UUID not found")
@@ -211,7 +200,7 @@ export default async function PostPage({ params }: PostPageProps) {
           comments={formattedComments}
           challengeId={post.challenge_id}
           postId={params.postId}
-          currentUserId={clerkUserId}
+          currentUserId={uuid}
         />
       </div>
     </div>

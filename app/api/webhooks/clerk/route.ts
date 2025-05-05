@@ -2,6 +2,7 @@ import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import { supabase } from '@/lib/supabase'
+import { clerkClient } from '@clerk/nextjs/server'
 
 export async function POST(req: Request) {
   // Get the headers
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
     const { id, email_addresses, first_name, last_name } = evt.data
 
     try {
-      await supabase
+      const { data, error } = await supabase
         .from('users')
         .upsert({
           clerk_id: id,
@@ -62,6 +63,17 @@ export async function POST(req: Request) {
         }, {
           onConflict: 'clerk_id'
         })
+        .select()
+
+      if (error) throw error
+
+      // 신규 사용자 생성 시 Clerk 메타데이터에 UUID 저장
+      if (eventType === 'user.created' && data) {
+        const supabaseUuid = data[0].id // Supabase에서 생성된 UUID 추출
+        await clerkClient.users.updateUser(id, {
+          publicMetadata: { supabaseUuid }
+        })
+      }
     } catch (error) {
       console.error('Error syncing user to Supabase:', error)
       return new Response('Error syncing user', { status: 500 })

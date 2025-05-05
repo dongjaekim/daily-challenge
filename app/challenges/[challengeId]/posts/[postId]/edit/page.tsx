@@ -1,8 +1,6 @@
 import { PostEditForm } from '@/components/posts/PostEditForm'
-import { Button } from '@/components/ui/button'
-import { auth } from '@clerk/nextjs'
 import { supabaseDb } from '@/db'
-import { getUserUuid } from '@/utils/server-auth'
+import { getSupabaseUuid } from '@/utils/server-auth'
 import { notFound, redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -14,13 +12,7 @@ interface PostEditPageProps {
 }
 
 export default async function PostEditPage({ params }: PostEditPageProps) {
-  const { userId: clerkUserId } = auth()
-  if (!clerkUserId) {
-    return notFound()
-  }
-
-  // clerk_id로 Supabase users 테이블에서 UUID 조회
-  const uuid = await getUserUuid(clerkUserId)
+  const uuid = await getSupabaseUuid()
   
   if (!uuid) {
     console.error("User UUID not found")

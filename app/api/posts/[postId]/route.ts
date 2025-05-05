@@ -1,7 +1,5 @@
-import { auth } from '@clerk/nextjs'
-import { supabaseDb } from '@/db'
 import { NextResponse } from 'next/server'
-import { getUserUuid } from '@/utils/server-auth'
+import { getSupabaseUuid } from '@/utils/server-auth'
 import { supabase } from '@/lib/supabase'
 
 export async function GET(
@@ -9,13 +7,7 @@ export async function GET(
   { params }: { params: { postId: string } }
 ) {
   try {
-    const { userId: clerkUserId } = auth()
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // clerk_id로 Supabase users 테이블에서 UUID 조회
-    const uuid = await getUserUuid(clerkUserId)
+    const uuid = await getSupabaseUuid()
     
     if (!uuid) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -45,14 +37,8 @@ export async function PATCH(
   { params }: { params: { postId: string } }
 ) {
   try {
-    const { userId: clerkUserId } = auth()
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const uuid = await getSupabaseUuid()
 
-    // clerk_id로 Supabase users 테이블에서 UUID 조회
-    const uuid = await getUserUuid(clerkUserId)
-    
     if (!uuid) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
@@ -121,13 +107,7 @@ export async function DELETE(
   { params }: { params: { postId: string } }
 ) {
   try {
-    const { userId: clerkUserId } = auth()
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // clerk_id로 Supabase users 테이블에서 UUID 조회
-    const uuid = await getUserUuid(clerkUserId)
+    const uuid = await getSupabaseUuid()
     
     if (!uuid) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })

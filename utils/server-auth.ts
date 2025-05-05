@@ -1,22 +1,13 @@
-import { supabase } from "@/lib/supabase"
+import { auth } from '@clerk/nextjs'
+import { jwtDecode } from 'jwt-decode';
 
-// 서버 컴포넌트에서 사용할 UUID 가져오기 함수
-export async function getUserUuid(clerkId: string) {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('clerk_id', clerkId)
-      .single()
+export async function getSupabaseUuid() {
+  const { getToken } = auth()
+  
+  const token = await getToken({ template: "supabase" });
+  if (!token) return undefined;
 
-    if (error) {
-      console.error("Error fetching user UUID:", error)
-      return null
-    }
+  const decoded = jwtDecode<{ supabase_uuid?: string }>(token);
 
-    return data?.id || null
-  } catch (error) {
-    console.error("Error getting user UUID:", error)
-    return null
-  }
-} 
+  return decoded?.supabase_uuid as string | undefined
+}

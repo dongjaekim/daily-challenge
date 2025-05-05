@@ -1,20 +1,13 @@
-import { auth } from '@clerk/nextjs'
 import { supabaseDb } from '@/db'
 import { NextResponse } from 'next/server'
-import { getUserUuid } from '@/utils/server-auth'
+import { getSupabaseUuid } from '@/utils/server-auth'
 
 export async function POST(
   req: Request,
   { params }: { params: { groupId: string } }
 ) {
   try {
-    const { userId: clerkUserId } = auth()
-    if (!clerkUserId) {
-      return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    // clerk_id로 Supabase users 테이블에서 UUID 조회
-    const uuid = await getUserUuid(clerkUserId)
+    const uuid = await getSupabaseUuid()
     
     if (!uuid) {
       return new NextResponse('User not found', { status: 404 })
@@ -54,13 +47,7 @@ export async function GET(
   { params }: { params: { groupId: string } }
 ) {
   try {
-    const { userId: clerkUserId } = auth()
-    if (!clerkUserId) {
-      return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    // clerk_id로 Supabase users 테이블에서 UUID 조회
-    const uuid = await getUserUuid(clerkUserId)
+    const uuid = await getSupabaseUuid()
     
     if (!uuid) {
       return new NextResponse('User not found', { status: 404 })
