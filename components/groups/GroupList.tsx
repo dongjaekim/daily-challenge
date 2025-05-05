@@ -5,14 +5,7 @@ import { EditGroupButton } from '@/components/groups/EditGroupButton'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
-interface IGroup {
-  id: string
-  name: string
-  description: string | null
-  memberCount: number
-  role: 'owner' | 'member'
-}
+import { IGroup } from '@/types'
 
 interface IGroupListProps {
   groups: IGroup[]

@@ -13,11 +13,12 @@ export interface IUser {
 export interface IGroup {
   id: string
   name: string
-  description: string
+  description: string | null
   created_at: string
   updated_at: string
   created_by: string
   image_url?: string
+  memberCount?: number // 클라이언트에서 그룹 멤버 수 역할 표시용
   role?: string  // 클라이언트측에서 사용자의 그룹 역할 표시용
 }
 

@@ -4,14 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { GroupForm } from '@/components/groups/GroupForm'
 import { useState } from 'react'
-
-interface IGroup {
-  id: string
-  name: string
-  description: string | null
-  memberCount: number
-  role: 'owner' | 'member'
-}
+import { IGroup } from '@/types'
 
 interface IUpdateGroupButtonProps {
   group: IGroup

@@ -4,28 +4,20 @@ import { GroupList } from '@/components/groups/GroupList'
 import { CreateGroupButton } from '@/components/groups/CreateGroupButton'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
-interface Group {
-  id: string
-  name: string
-  description: string | null
-  memberCount: number
-  role: 'owner' | 'member'
-  created_by: string
-}
+import { IGroup } from '@/types'
 
 interface IClientGroupPageProps {
-  initialGroups: Group[]
+  initialGroups: IGroup[]
 }
 
 export function ClientGroupPage({ initialGroups }: IClientGroupPageProps) {
   const router = useRouter()
-  const [groups, setGroups] = useState<Group[]>(initialGroups)
+  const [groups, setGroups] = useState<IGroup[]>(initialGroups)
 
   // 새 모임이 생성되었을 때 목록에 추가
   const handleGroupCreated = (newGroup: any) => {
     // 멤버 수, 역할 등 필요한 속성을 추가
-    const groupWithDetails: Group = {
+    const groupWithDetails: IGroup = {
       ...newGroup,
       memberCount: 1, // 생성자 본인만 있으므로 1
       role: 'owner' as const // 타입 명시
