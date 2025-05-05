@@ -4,10 +4,20 @@ import { supabase } from '@/lib/supabase'
 export const supabaseDb = {
   // 테이블에서 데이터 조회
   select: async (table: string, query: any = {}) => {
-    const { data, error } = await supabase
-      .from(table)
-      .select('*')
-      .match(query)
+    let queryBuilder = supabase.from(table).select('*')
+
+    // 각 쿼리 파라미터 처리
+    Object.entries(query).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        // 배열인 경우 IN 절 사용
+        queryBuilder = queryBuilder.in(key, value)
+      } else {
+        // 단일 값인 경우 일반 조건 사용
+        queryBuilder = queryBuilder.eq(key, value)
+      }
+    })
+
+    const { data, error } = await queryBuilder
     
     if (error) throw error
     return data
