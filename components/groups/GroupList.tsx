@@ -1,11 +1,12 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { EditGroupButton } from '@/components/groups/EditGroupButton'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-interface Group {
+interface IGroup {
   id: string
   name: string
   description: string | null
@@ -13,12 +14,13 @@ interface Group {
   role: 'owner' | 'member'
 }
 
-interface GroupListProps {
-  groups: Group[]
+interface IGroupListProps {
+  groups: IGroup[]
   onGroupDeleted?: (groupId: string) => void
+  onGroupUpdated?: (newGroup: any) => void
 }
 
-export function GroupList({ groups, onGroupDeleted }: GroupListProps) {
+export function GroupList({ groups, onGroupDeleted, onGroupUpdated }: IGroupListProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
@@ -59,11 +61,6 @@ export function GroupList({ groups, onGroupDeleted }: GroupListProps) {
     router.push(`/groups/${groupId}`)
   }
 
-  const handleEditClick = (groupId: string, e: React.MouseEvent) => {
-    e.stopPropagation() // 이벤트 버블링 방지
-    router.push(`/groups/${groupId}/edit`)
-  }
-
   return (
     <div className="space-y-4">
       {groups.map((group) => (
@@ -81,12 +78,10 @@ export function GroupList({ groups, onGroupDeleted }: GroupListProps) {
           </div>
           {group.role === 'owner' && (
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={(e) => handleEditClick(group.id, e)}
-              >
-                수정
-              </Button>
+              <EditGroupButton 
+                group={group}
+                onGroupUpdated={onGroupUpdated} 
+              />
               <Button
                 variant="destructive"
                 onClick={(e) => handleDelete(group.id, e)}

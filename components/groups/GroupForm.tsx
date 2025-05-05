@@ -82,8 +82,6 @@ export const GroupForm = ({ initialData, groupId, setOpen, onSuccess }: IGroupFo
         if (onSuccess) {
           onSuccess(updatedGroup)
         }
-        
-        router.push(`/groups/${groupId}`)
       } else {
         // 새 모임 생성
         const response = await fetch('/api/groups', {
