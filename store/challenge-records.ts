@@ -1,30 +1,5 @@
+import { IChallengeRecord } from '@/types'
 import { create } from 'zustand'
-
-interface IChallenge {
-  id: string
-  title: string
-  description: string
-  created_at: string
-  group_id: string
-  created_by: string
-}
-
-interface IUser {
-  id: string
-  name: string
-  email: string
-  avatar_url?: string
-}
-
-interface IChallengeRecord {
-  id: string
-  challenge_id: string
-  user_id: string
-  completed_at: string
-  created_at: string
-  users?: IUser
-  challenge?: IChallenge
-}
 
 interface ChallengeRecordsState {
   // 그룹별 챌린지 레코드 저장
