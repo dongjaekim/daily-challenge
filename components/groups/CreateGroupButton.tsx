@@ -1,25 +1,27 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import { GroupForm } from '@/components/groups/GroupForm'
-import { useState } from 'react'
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { GroupForm } from "@/components/groups/GroupForm";
+import { useState } from "react";
 
 interface ICreateGroupButtonProps {
-  onGroupCreated?: (newGroup: any) => void
+  onGroupCreated?: (newGroup: any) => void;
 }
 
-export const CreateGroupButton = ({ onGroupCreated }: ICreateGroupButtonProps) => {
-  const [open, setOpen] = useState(false)
-  
+export const CreateGroupButton = ({
+  onGroupCreated,
+}: ICreateGroupButtonProps) => {
+  const [open, setOpen] = useState(false);
+
   // 새 모임 생성 후 콜백 처리
   const handleGroupCreated = (newGroup: any) => {
     if (onGroupCreated) {
-      onGroupCreated(newGroup)
+      onGroupCreated(newGroup);
     }
-    setOpen(false)
-  }
-  
+    setOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -29,5 +31,5 @@ export const CreateGroupButton = ({ onGroupCreated }: ICreateGroupButtonProps) =
         <GroupForm setOpen={setOpen} onSuccess={handleGroupCreated} />
       </DialogContent>
     </Dialog>
-  )
-} 
+  );
+};

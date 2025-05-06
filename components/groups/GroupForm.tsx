@@ -170,7 +170,7 @@ export const GroupForm = ({
           />
         </div>
       </div>
-      <Button variant="outline" type="submit" disabled={isLoading || !name}>
+      <Button type="submit" disabled={isLoading || !name}>
         {isLoading ? "처리 중..." : groupId ? "수정" : "만들기"}
       </Button>
     </form>
