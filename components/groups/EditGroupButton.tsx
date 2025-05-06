@@ -1,49 +1,50 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import { GroupForm } from '@/components/groups/GroupForm'
-import { useState } from 'react'
-import { IGroup } from '@/types'
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { GroupForm } from "@/components/groups/GroupForm";
+import { IGroup } from "@/types";
+import { useState } from "react";
 
 interface IUpdateGroupButtonProps {
-  group: IGroup
-  onGroupUpdated?: (newGroup: any) => void
+  group: IGroup;
+  onGroupUpdated?: (newGroup: any) => void;
+  handleButtonClick: (e: React.MouseEvent) => void;
 }
 
-export const EditGroupButton = ({ group, onGroupUpdated }: IUpdateGroupButtonProps) => {
-  const [open, setOpen] = useState(false)
-  
+export const EditGroupButton = ({
+  group,
+  onGroupUpdated,
+  handleButtonClick,
+}: IUpdateGroupButtonProps) => {
+  const [open, setOpen] = useState(false);
+
   // 새 모임 생성 후 콜백 처리
   const handleGroupUpdated = (newGroup: any) => {
     if (onGroupUpdated) {
-      onGroupUpdated(newGroup)
+      onGroupUpdated(newGroup);
     }
-    setOpen(false)
-  }
+    setOpen(false);
+  };
 
-  // 이벤트 버블링 방지
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setOpen(true)
-  }
-  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal={true}>
       <DialogTrigger asChild>
-        <Button onClick={handleButtonClick}>수정</Button>
+        <Button variant="outline" onClick={handleButtonClick}>
+          수정
+        </Button>
       </DialogTrigger>
-      <DialogContent onClick={e => e.stopPropagation()}>
-        <GroupForm 
+      <DialogContent>
+        <GroupForm
           initialData={{
             name: group.name,
-            description: group.description
+            description: group.description,
           }}
           groupId={group.id}
-          setOpen={setOpen} 
-          onSuccess={handleGroupUpdated} 
+          setOpen={setOpen}
+          onSuccess={handleGroupUpdated}
         />
       </DialogContent>
     </Dialog>
-  )
-} 
+  );
+};
