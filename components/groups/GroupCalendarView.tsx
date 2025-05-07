@@ -164,18 +164,18 @@ export function GroupCalendarView({
   // 사용자별 색상 생성 (고정 색상)
   const getUserColor = useMemo(() => {
     const colors = [
-      "bg-red-500",
-      "bg-blue-500",
-      "bg-green-500",
-      "bg-yellow-500",
-      "bg-purple-500",
-      "bg-pink-500",
-      "bg-indigo-500",
-      "bg-orange-500",
-      "bg-teal-500",
-      "bg-cyan-500",
-      "bg-lime-500",
-      "bg-emerald-500",
+      "bg-red-400",
+      "bg-blue-400",
+      "bg-green-400",
+      "bg-yellow-400",
+      "bg-purple-400",
+      "bg-pink-400",
+      "bg-indigo-400",
+      "bg-orange-400",
+      "bg-teal-400",
+      "bg-cyan-400",
+      "bg-lime-400",
+      "bg-emerald-400",
     ];
 
     const userColors: Record<string, string> = {};
@@ -289,15 +289,15 @@ export function GroupCalendarView({
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="relative w-full max-w-full mx-auto aspect-[7/5] sm:aspect-[7/3]">
+      <CardContent className="flex flex-col h-auto">
+        <div className="relative w-full max-w-full mx-auto">
           {loading ? (
             <div className="flex justify-center items-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-7 gap-1 mb-1">
+              <div className="grid grid-cols-7 mb-1">
                 {/* 요일 헤더 */}
                 {weekdays.map((day) => (
                   <div key={day} className="text-center font-medium text-sm">
@@ -305,7 +305,7 @@ export function GroupCalendarView({
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1 h-full">
+              <div className="grid grid-cols-7 gap-1">
                 {/* 날짜 그리드 */}
                 {daysInCalendar.map((day) => {
                   // 오늘 날짜 여부
@@ -321,7 +321,8 @@ export function GroupCalendarView({
                     <div
                       key={day.toString()}
                       className={`
-                    relative h-full border rounded-md p-1 
+                          min-h-[40px] sm:min-h-[80px] 
+                          border rounded-md p-1 
                     flex flex-col justify-between
                     ${
                       !isCurrentMonth ? "text-muted-foreground bg-muted/20" : ""
@@ -340,7 +341,7 @@ export function GroupCalendarView({
                         {format(day, "d")}
                       </div>
 
-                      <div className="flex gap-1 items-end min-h-[12px] sm:min-h-[16px]">
+                      <div className="flex flex-wrap gap-1 items-end">
                         {Object.entries(userRecordsMap)
                           .slice(0, 5)
                           .map(([userId, userRecords]) => {
@@ -380,10 +381,10 @@ export function GroupCalendarView({
         </div>
 
         {/* 범례 추가 */}
-        <div className="mt-6">
-          <div className="flex flex-wrap gap-4">
+        <div className="mt-4">
+          <div className="flex flex-wrap gap-2 sm:gap-4">
             {getUniqueUsers().map((user) => (
-              <div key={user.id} className="flex items-center gap-2">
+              <div key={user.id} className="flex items-center gap-1 sm:gap-2">
                 <div
                   className={`w-1 h-1 sm:w-2 sm:h-2 rounded-full ${getUserColor(
                     user.id
