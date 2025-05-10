@@ -90,6 +90,23 @@ export async function DELETE(
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
+    // 본인이 챌린지 생성자인지 확인
+    const checkChallengeCreator = await supabaseDb.select('challenges', { id: params.challengeId, created_by: uuid })
+    if (!checkChallengeCreator) {
+      return new NextResponse('Not found', { status: 404 })
+    }
+
+    await supabaseDb.update(
+      'posts',
+      {
+        challenge_id: null,
+      },
+      {
+        challenge_id: params.challengeId,
+      }
+    )
+
+    // 챌린지 삭제 + 삭제되며 challenge_progress 데이터도 삭제 (cascade)
     const challenge = await supabaseDb.delete(
       'challenges',
       { group_id: params.groupId, id: params.challengeId }

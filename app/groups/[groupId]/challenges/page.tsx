@@ -6,21 +6,21 @@ import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-interface ChallengesPageProps {
+interface IChallengesPageProps {
   params: {
     groupId: string;
   };
 }
 
-export default async function ChallengesPage({ params }: ChallengesPageProps) {
+export default async function ChallengesPage({ params }: IChallengesPageProps) {
   const uuid = await getSupabaseUuid();
 
   if (!uuid) {
     console.error("User UUID not found");
     return notFound();
   }
-  console.log("uuid~!@~@~!@~!@~!@~!@!~", uuid);
-  // 그룹 멤버 여부 확인 (이제 uuid 사용)
+
+  // 그룹 멤버 여부 확인
   const memberArr = await supabaseDb.select("group_members", {
     group_id: params.groupId,
     user_id: uuid,
@@ -33,7 +33,7 @@ export default async function ChallengesPage({ params }: ChallengesPageProps) {
   const challenges = await supabaseDb.select("challenges", {
     group_id: params.groupId,
   });
-  console.log(challenges);
+
   // 현재 달의 시작일과 종료일 계산
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
