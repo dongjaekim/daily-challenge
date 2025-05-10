@@ -8,7 +8,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { IChallenge } from "@/types";
-import { Toaster } from "../ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 
 interface IClientChallengesProps {
   groupId: string;
@@ -26,6 +26,7 @@ export function ClientChallenges({
   const [challenges, setChallenges] = useState<IChallenge[]>(initialChallenges);
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   // 새 챌린지 추가 (useCallback으로 메모이제이션)
   const handleChallengeCreated = useCallback(
@@ -62,7 +63,6 @@ export function ClientChallenges({
 
   return (
     <div className="space-y-4">
-      <Toaster />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
