@@ -31,6 +31,7 @@ export interface IChallenge {
   updated_at: string
   group_id: string
   created_by: string
+  progressSum?: number // 클라이언트에서 챌린지 진행 횟수 표시용
 }
 
 // 챌린지 기록
