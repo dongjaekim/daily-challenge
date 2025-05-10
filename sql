@@ -4,6 +4,7 @@ create table users (
   clerk_id text unique not null,
   email text unique not null,
   name text,
+  avatar_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -60,6 +61,8 @@ create table posts (
   title text not null,
   content text not null,
   image_urls text[] default '{}',
+  like_count integer default 0,
+  comment_count integer default 0,
   is_deleted boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -187,3 +190,56 @@ create policy "Users can view comments" on post_comments
   for select using (true);
 create policy "Users can manage their own comments" on post_comments
   for all using (user_id = auth.uid()::uuid);
+
+CREATE OR REPLACE FUNCTION increment_like_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET like_count = like_count + 1 WHERE id = NEW.post_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER like_added
+AFTER INSERT ON post_likes
+FOR EACH ROW EXECUTE FUNCTION increment_like_count();
+
+CREATE OR REPLACE FUNCTION decrement_like_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET like_count = like_count - 1 WHERE id = OLD.post_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER like_removed
+AFTER DELETE ON post_likes
+FOR EACH ROW EXECUTE FUNCTION decrement_like_count();
+
+CREATE OR REPLACE FUNCTION increment_comment_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER comment_added
+AFTER INSERT ON post_comments
+FOR EACH ROW EXECUTE FUNCTION increment_comment_count();
+
+CREATE OR REPLACE FUNCTION decrement_comment_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET comment_count = comment_count - 1 WHERE id = OLD.post_id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER comment_removed
+AFTER DELETE ON post_comments
+FOR EACH ROW EXECUTE FUNCTION decrement_comment_count();
+
+CREATE TRIGGER comment_soft_delete
+AFTER UPDATE OF is_deleted ON post_comments
+FOR EACH ROW
+EXECUTE FUNCTION decrement_comment_count();
