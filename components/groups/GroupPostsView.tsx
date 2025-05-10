@@ -16,25 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import Link from "next/link";
 import { PenSquare, Image as ImageIcon, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { IPost } from "@/types";
+import { IChallenge, IPost } from "@/types";
 import { usePostsStore } from "@/store/posts";
 import { useChallengesStore } from "@/store/challenges";
 import { LikeButton } from "@/components/posts/LikeButton";
-
-interface IChallenge {
-  id: string;
-  title: string;
-  description: string;
-  created_at: string;
-  group_id: string;
-  created_by: string;
-}
 
 interface GroupPostsViewProps {
   groupId: string;
@@ -98,21 +87,9 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
 
         const data = await response.json();
 
-        // 필드 이름 호환성 처리 - 전체 데이터에 likeCount, commentCount 필드가 있는지 확인하고 없으면 추가
-        const formattedPosts = data.map((post: any) => ({
-          ...post,
-          // likes와 likeCount, comments와 commentCount 둘 다 지원
-          likeCount:
-            post.likeCount !== undefined ? post.likeCount : post.likes || 0,
-          commentCount:
-            post.commentCount !== undefined
-              ? post.commentCount
-              : post.comments || 0,
-        }));
-
         // 상태 및 스토어 업데이트
-        setPosts(formattedPosts);
-        setStorePosts(groupId, formattedPosts, challengeId);
+        setPosts(data);
+        setStorePosts(groupId, data, challengeId);
       } catch (error) {
         console.error("게시글을 불러오는 중 오류가 발생했습니다:", error);
         setPosts([]);
@@ -136,7 +113,11 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
 
   // 게시글의 이미지 처리 (이전 버전과 호환)
   const getPostImages = (post: IPost) => {
-    return post.image_urls || (post.image_url ? [post.image_url] : []);
+    return post.image_urls || [];
+  };
+
+  const handlePostClick = (postId: string) => {
+    router.push(`/groups/${groupId}/posts/${postId}`);
   };
 
   return (
@@ -183,7 +164,8 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
               return (
                 <div
                   key={post.id}
-                  className="border rounded-lg p-4 md:p-5 space-y-3 transition-all hover:bg-slate-50/50"
+                  className="border rounded-lg p-4 md:p-5 space-y-3 transition-all hover:bg-accent/50 cursor-pointer transition-colors"
+                  onClick={() => handlePostClick(post.id)}
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                     <div className="flex-1">
@@ -216,14 +198,6 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
                         )}
                       </div>
                     </div>
-                    <Link
-                      href={`/groups/${groupId}/posts/${post.id}`}
-                      className="mt-1 sm:mt-0"
-                    >
-                      <Button variant="outline" size="sm" className="md:px-4">
-                        보기
-                      </Button>
-                    </Link>
                   </div>
 
                   <p className="text-sm md:text-base line-clamp-2 text-muted-foreground">
@@ -256,16 +230,23 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
                     </div>
                   )}
 
-                  <div className="flex text-sm text-muted-foreground gap-3 pt-1">
+                  <div className="flex text-muted-foreground gap-3 pt-1">
                     <LikeButton
                       postId={post.id}
                       initialLikeCount={post.likeCount || 0}
                       initialLiked={post.isLiked || false}
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       groupId={groupId}
                     />
-                    <span className="flex items-center gap-1">
+                    <span
+                      className="flex items-center gap-2
+                    border border-gray-200
+                    rounded-md
+                    px-3 py-1
+                    text-xs
+                    "
+                    >
                       <MessageSquare className="h-4 w-4" /> {post.commentCount}
                     </span>
                   </div>
