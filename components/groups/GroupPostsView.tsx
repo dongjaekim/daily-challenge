@@ -18,7 +18,12 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { PenSquare, Image as ImageIcon, MessageSquare } from "lucide-react";
+import {
+  PenSquare,
+  Image as ImageIcon,
+  MessageSquare,
+  Loader2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { IChallenge, IPost } from "@/types";
 import { usePostsStore } from "@/store/posts";
@@ -85,11 +90,11 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
           throw new Error("게시글을 불러오는데 실패했습니다.");
         }
 
-        const data = await response.json();
+        const posts = await response.json();
 
         // 상태 및 스토어 업데이트
-        setPosts(data);
-        setStorePosts(groupId, data, challengeId);
+        setPosts(posts);
+        setStorePosts(groupId, posts, challengeId);
       } catch (error) {
         console.error("게시글을 불러오는 중 오류가 발생했습니다:", error);
         setPosts([]);
@@ -155,7 +160,9 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="text-center py-10">로딩 중...</div>
+          <div className="flex justify-center items-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
         ) : posts.length > 0 ? (
           <div className="space-y-4 md:space-y-5">
             {posts.map((post) => {
