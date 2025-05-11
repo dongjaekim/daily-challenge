@@ -1,34 +1,37 @@
-import { NextResponse } from 'next/server'
-import { getSupabaseUuid } from '@/utils/server-auth'
-import { supabase } from '@/lib/supabase'
+import { NextResponse } from "next/server";
+import { getSupabaseUuid } from "@/utils/server-auth";
+import { supabase } from "@/lib/supabase";
 
 export async function GET(
   req: Request,
   { params }: { params: { postId: string } }
 ) {
   try {
-    const uuid = await getSupabaseUuid()
-    
+    const uuid = await getSupabaseUuid();
+
     if (!uuid) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // 게시글 조회
     const { data: post, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', params.postId)
-      .single()
-    
+      .from("posts")
+      .select("*")
+      .eq("id", params.postId)
+      .single();
+
     if (error) {
-      console.error('게시글 조회 오류:', error)
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+      console.error("게시글 조회 오류:", error);
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    return NextResponse.json(post)
+    return NextResponse.json(post);
   } catch (error) {
-    console.error('[POST_GET_ERROR]', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error("[POST_GET_ERROR]", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -37,68 +40,71 @@ export async function PATCH(
   { params }: { params: { postId: string } }
 ) {
   try {
-    const uuid = await getSupabaseUuid()
+    const uuid = await getSupabaseUuid();
 
     if (!uuid) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // 요청 본문 파싱
-    const body = await req.json()
-    const { title, content, imageUrls } = body
+    const body = await req.json();
+    const { title, content, imageUrls } = body;
 
     if (!title || !content) {
       return NextResponse.json(
-        { error: 'Title and content are required' },
+        { error: "Title and content are required" },
         { status: 400 }
-      )
+      );
     }
 
     // 게시글 조회
     const { data: post, error: postError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', params.postId)
-      .eq('user_id', uuid)
-      .single()
-    
+      .from("posts")
+      .select("*")
+      .eq("id", params.postId)
+      .eq("user_id", uuid)
+      .single();
+
     if (postError) {
       return NextResponse.json(
-        { error: 'Post not found or you are not authorized to edit this post' },
+        { error: "Post not found or you are not authorized to edit this post" },
         { status: 404 }
-      )
+      );
     }
 
     // 게시글 업데이트
     const { data: updatedPost, error: updateError } = await supabase
-      .from('posts')
+      .from("posts")
       .update({
         title,
         content,
         image_urls: Array.isArray(imageUrls) ? imageUrls : post.image_urls,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', params.postId)
-      .eq('user_id', uuid)
+      .eq("id", params.postId)
+      .eq("user_id", uuid)
       .select()
-      .single()
-    
+      .single();
+
     if (updateError) {
-      console.error('게시글 업데이트 오류:', updateError)
+      console.error("게시글 업데이트 오류:", updateError);
       return NextResponse.json(
-        { error: 'Failed to update post' },
+        { error: "Failed to update post" },
         { status: 500 }
-      )
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: '게시글이 성공적으로 수정되었습니다.',
-      post: updatedPost
-    })
+      message: "게시글이 성공적으로 수정되었습니다.",
+      post: updatedPost,
+    });
   } catch (error) {
-    console.error('[POST_PATCH_ERROR]', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error("[POST_PATCH_ERROR]", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -107,100 +113,91 @@ export async function DELETE(
   { params }: { params: { postId: string } }
 ) {
   try {
-    const uuid = await getSupabaseUuid()
-    
+    const uuid = await getSupabaseUuid();
+
     if (!uuid) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // 게시글 조회
     const { data: post, error: postError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', params.postId)
-      .single()
-    
+      .from("posts")
+      .select("*")
+      .eq("id", params.postId)
+      .single();
+
     if (postError) {
-      console.error('게시글 조회 오류:', postError)
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+      console.error("게시글 조회 오류:", postError);
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
     // 삭제 권한 확인 (작성자만 삭제 가능)
     if (post.user_id !== uuid) {
       return NextResponse.json(
-        { error: 'You are not authorized to delete this post' },
+        { error: "You are not authorized to delete this post" },
         { status: 403 }
-      )
+      );
     }
 
     // 게시글의 is_deleted를 true로 업데이트
-    const { data: updatedPost, error: updateError } = await supabase
-      .from('posts')
+    const { data, error: updateError } = await supabase
+      .from("posts")
       .update({
         is_deleted: true,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', params.postId)
-      .eq('user_id', uuid)
+      .eq("id", params.postId)
+      .eq("user_id", uuid)
       .select()
-      .single()
-    
+      .single();
+
     if (updateError) {
-      console.error('게시글 삭제 표시 오류:', updateError)
+      console.error("게시글 삭제 표시 오류:", updateError);
       return NextResponse.json(
-        { error: 'Failed to delete post' },
+        { error: "Failed to delete post" },
         { status: 500 }
-      )
+      );
     }
 
     // 챌린지 진행 기록 조회 및 삭제
-    const challengeId = post.challenge_id
-    const createdDate = new Date(post.created_at)
-    const formattedDate = createdDate.toISOString().split('T')[0]
-    const startOfDay = new Date(formattedDate).toISOString()
-    const endOfDay = new Date(new Date(formattedDate).getTime() + 24 * 60 * 60 * 1000).toISOString()
+    const challengeId = post.challenge_id;
+    const createdDate = new Date(post.created_at);
+    const formattedDate = createdDate.toISOString().split("T")[0];
+    const startOfDay = new Date(formattedDate).toISOString();
+    const endOfDay = new Date(
+      new Date(formattedDate).getTime() + 24 * 60 * 60 * 1000
+    ).toISOString();
 
-    // 해당 날짜에 작성된 다른 게시글이 있는지 확인
-    const { data: otherPosts, error: otherPostsError } = await supabase
-      .from('posts')
-      .select('id')
-      .eq('user_id', uuid)
-      .eq('challenge_id', challengeId)
-      .eq('is_deleted', false)
-      .neq('id', params.postId)
-      .gte('created_at', startOfDay)
-      .lt('created_at', endOfDay)
-    
-    // 같은 날에 같은 챌린지에 작성한 다른 게시글이 없을 경우에만 challenge_progress 삭제
-    if (!otherPostsError && (!otherPosts || otherPosts.length === 0)) {
-      const { data: progressData, error: progressError } = await supabase
-        .from('challenge_progress')
-        .select('id')
-        .eq('challenge_id', challengeId)
-        .eq('user_id', uuid)
-        .gte('created_at', startOfDay)
-        .lt('created_at', endOfDay)
-      
-      if (!progressError && progressData && progressData.length > 0) {
-        // 해당 날짜의 challenge_progress 삭제
-        const { error: deleteError } = await supabase
-          .from('challenge_progress')
-          .delete()
-          .eq('id', progressData[0].id)
-        
-        if (deleteError) {
-          console.error('챌린지 진행 기록 삭제 오류:', deleteError)
-          // 챌린지 진행 기록 삭제 실패해도 게시글 소프트 삭제는 성공한 것으로 처리
-        }
+    const { data: progressData, error: progressError } = await supabase
+      .from("challenge_progress")
+      .select("id")
+      .eq("challenge_id", challengeId)
+      .eq("user_id", uuid)
+      .gte("created_at", startOfDay)
+      .lt("created_at", endOfDay);
+
+    if (!progressError && progressData && progressData.length > 0) {
+      // 해당 날짜의 challenge_progress 삭제
+      const { error: deleteError } = await supabase
+        .from("challenge_progress")
+        .delete()
+        .eq("id", progressData[0].id);
+
+      if (deleteError) {
+        console.error("챌린지 진행 기록 삭제 오류:", deleteError);
+        // 챌린지 진행 기록 삭제 실패해도 게시글 소프트 삭제는 성공한 것으로 처리
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: '게시글이 성공적으로 삭제되었습니다.'
-    })
+      message: "게시글이 성공적으로 삭제되었습니다.",
+    });
   } catch (error) {
-    console.error('[POST_DELETE_ERROR]', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error("[POST_DELETE_ERROR]", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
-} 
+}

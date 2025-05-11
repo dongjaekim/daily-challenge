@@ -4,9 +4,8 @@ import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit, Trash } from "lucide-react";
 import Link from "next/link";
-import { ImageGallery } from "@/components/posts/ImageGallery";
 import { supabase } from "@/lib/supabase";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PostDetail } from "@/components/posts/PostDetail";
@@ -17,14 +16,14 @@ function getInitials(name: string) {
   return name.substring(0, 2).toUpperCase();
 }
 
-interface PostPageProps {
+interface IPostPageProps {
   params: {
     groupId: string;
     postId: string;
   };
 }
 
-export default async function PostPage({ params }: PostPageProps) {
+export default async function PostPage({ params }: IPostPageProps) {
   const uuid = await getSupabaseUuid();
 
   if (!uuid) {
@@ -42,7 +41,7 @@ export default async function PostPage({ params }: PostPageProps) {
     return notFound();
   }
 
-  // 게시글 조회
+  // 게시글 조회 (목록 -> 상세로 넘어가는 동안 삭제되었는지 확인 용도)
   const { data: postData, error } = await supabase
     .from("posts")
     .select(
@@ -50,14 +49,12 @@ export default async function PostPage({ params }: PostPageProps) {
       *,
       users:user_id (
         id, name, email
-      ),
-      challenges:challenge_id (
-        id, title
       )
     `
     )
     .eq("id", params.postId)
     .eq("group_id", params.groupId)
+    .eq("is_deleted", false)
     .single();
 
   if (error || !postData) {
@@ -72,104 +69,10 @@ export default async function PostPage({ params }: PostPageProps) {
       }
     : null;
 
-  // challenge 정보 포맷팅
-  const challenge = postData.challenges
-    ? {
-        id: postData.challenges.id,
-        title: postData.challenges.title,
-      }
-    : null;
-
   // 최종 게시글 객체 생성
   const post = {
     ...postData,
     author: author,
-    challenge: challenge,
-  };
-
-  // 좋아요 수 조회
-  const likesArr = await supabaseDb.select("post_likes", {
-    post_id: params.postId,
-  });
-
-  // 댓글 수 조회
-  const commentsArr = await supabaseDb.select("post_comments", {
-    post_id: params.postId,
-  });
-
-  // 그룹 정보 조회
-  const groupArr = await supabaseDb.select("groups", { id: params.groupId });
-  const group = groupArr[0];
-
-  if (!group) {
-    return notFound();
-  }
-
-  // 게시글의 이미지 처리 (이전 버전과 호환)
-  const imageUrls = post.image_urls || (post.image_url ? [post.image_url] : []);
-
-  // 현재 사용자의 좋아요 여부 확인
-  const userLike = await supabaseDb.select("post_likes", {
-    post_id: params.postId,
-    user_id: uuid,
-  });
-  const hasLiked = userLike.length > 0;
-
-  // 댓글 목록 조회 (삭제된 댓글 포함)
-  const commentsWithUsers = await supabase
-    .from("post_comments")
-    .select(
-      `
-      *,
-      users:user_id (
-        id, name, avatar_url, clerk_id
-      )
-    `
-    )
-    .eq("post_id", params.postId)
-    .order("created_at", { ascending: true });
-
-  // 댓글 데이터 포맷팅
-  const formattedComments = (commentsWithUsers.data || []).map((comment) => ({
-    id: comment.id,
-    content: comment.content,
-    created_at: comment.created_at,
-    updated_at: comment.updated_at || comment.created_at,
-    user_id: comment.user_id,
-    post_id: comment.post_id,
-    parent_id: comment.parent_id,
-    is_deleted: comment.is_deleted || false,
-    author: {
-      id: comment.users?.id,
-      name: comment.users?.name || "알 수 없음",
-      clerkId: comment.users?.clerk_id,
-      avatar_url: comment.users?.avatar_url,
-    },
-    isAuthor: comment.user_id === uuid,
-  }));
-
-  // PostDetail 컴포넌트에 전달할 포맷으로 데이터 변환
-  const formattedPost = {
-    id: post.id,
-    title: post.title,
-    content: post.content,
-    created_at: post.created_at,
-    imageUrls: imageUrls,
-    author: {
-      id: post.author?.id || "",
-      clerkId: post.author?.clerk_id || "",
-      name: post.author?.name || "알 수 없음",
-      avatar_url: post.author?.avatar_url,
-    },
-    isAuthor: post.user_id === uuid,
-    likes: likesArr.length,
-    comments: commentsArr.length,
-    // 필드 호환성을 위한 추가 필드
-    likeCount: likesArr.length,
-    commentCount: commentsArr.length,
-    isLiked: hasLiked,
-    challengeId: post.challenge_id,
-    groupId: post.group_id,
   };
 
   return (
@@ -224,8 +127,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
       <div className="bg-white rounded-lg shadow-sm p-0">
         <PostDetail
-          post={formattedPost}
-          comments={formattedComments}
+          groupId={params.groupId}
           challengeId={post.challenge_id}
           postId={params.postId}
           currentUserId={uuid}
