@@ -39,7 +39,6 @@ export interface IChallengeRecord {
   id: string;
   challenge_id: string;
   user_id: string;
-  completed_at: string;
   created_at: string;
   user?: IUser;
   challenge?: IChallenge;

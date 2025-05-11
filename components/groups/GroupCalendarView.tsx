@@ -214,7 +214,7 @@ export function GroupCalendarView({
     records.forEach((record: IChallengeRecord) => {
       try {
         // KST 날짜로 변환
-        const kstDateStr = convertToKstDate(record.completed_at);
+        const kstDateStr = convertToKstDate(record.created_at);
 
         // 날짜별로 그룹화
         if (!result[kstDateStr]) {

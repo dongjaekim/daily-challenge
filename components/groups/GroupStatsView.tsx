@@ -106,7 +106,7 @@ export function GroupStatsView({ groupId, challenges }: IGroupStatsViewProps) {
             const uniqueDates = new Set(
               challengeRecords.map(
                 (record) =>
-                  new Date(record.completed_at).toISOString().split("T")[0]
+                  new Date(record.created_at).toISOString().split("T")[0]
               )
             );
 
