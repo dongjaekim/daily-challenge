@@ -258,7 +258,7 @@ export function GroupCalendarView({
 
     Object.values(recordsByDateAndUser).forEach((dateUsers) => {
       Object.entries(dateUsers).forEach(([userId, userRecords]) => {
-        const user = userRecords[0]?.users;
+        const user = userRecords[0]?.user;
         if (user && !usersMap.has(userId)) {
           usersMap.set(userId, user.name);
         }
@@ -431,7 +431,7 @@ export function GroupCalendarView({
           <div className="mt-4 space-y-4">
             {Object.entries(recordsByDateAndUser[selectedDay || ""] || {}).map(
               ([userId, userRecords]) => {
-                const user = userRecords[0]?.users;
+                const user = userRecords[0]?.user;
                 if (!user) return null;
 
                 return (

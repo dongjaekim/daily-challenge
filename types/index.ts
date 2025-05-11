@@ -56,12 +56,12 @@ export interface IPost {
   user_id: string;
   group_id: string;
   challenge_id: string;
+  likeCount: number;
+  commentCount: number;
   author?: IUser;
   challenge?: IChallenge;
   likes?: IPostLike[];
   comments?: IPostComment[];
-  likeCount?: number; // 좋아요 수 (likes와 호환)
-  commentCount?: number; // 댓글 수 (comments와 호환)
   isLiked?: boolean;
   isAuthor?: boolean;
 }

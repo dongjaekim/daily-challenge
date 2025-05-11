@@ -1,103 +1,87 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/hooks/use-toast'
-import { Loader2, Send } from 'lucide-react'
+import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Send } from "lucide-react";
+import { IPostComment } from "@/types";
 
-interface IAuthor {
-  id: string
-  clerkId: string
-  name: string
-  avatar_url?: string
-}
-
-interface IComment {
-  id: string
-  content: string
-  created_at: string
-  author: IAuthor
-  isAuthor: boolean
-  parent_id?: string
-}
-
-interface CommentFormProps {
-  postId: string
-  parentId?: string | null
-  onCommentSubmitted: (comment: IComment) => void
-  placeholder?: string
-  buttonText?: string
-  autoFocus?: boolean
-  onCancel?: () => void
+interface ICommentFormProps {
+  postId: string;
+  parentId?: string | null;
+  onCommentSubmitted: (comment: IPostComment) => void;
+  placeholder?: string;
+  buttonText?: string;
+  autoFocus?: boolean;
+  onCancel?: () => void;
 }
 
 export function CommentForm({
   postId,
   parentId = null,
   onCommentSubmitted,
-  placeholder = '댓글을 작성해보세요...',
-  buttonText = '댓글 작성',
+  placeholder = "댓글을 작성해보세요...",
+  buttonText = "댓글 작성",
   autoFocus = false,
-  onCancel
-}: CommentFormProps) {
-  const [content, setContent] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  onCancel,
+}: ICommentFormProps) {
+  const [content, setContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!content.trim()) {
       toast({
-        title: '댓글을 입력해주세요',
-        variant: 'destructive',
-      })
-      return
+        title: "댓글을 입력해주세요",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    setIsLoading(true)
-    
+
+    setIsLoading(true);
+
     try {
       const response = await fetch(`/api/posts/${postId}/comments`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           content,
-          parentId
+          parentId,
         }),
-      })
-      
+      });
+
       if (!response.ok) {
-        throw new Error('댓글 작성에 실패했습니다.')
+        throw new Error("댓글 작성에 실패했습니다.");
       }
-      
-      const comment = await response.json()
-      
+
+      const comment = await response.json();
+
       // 성공적으로 댓글이 작성됨
       toast({
-        title: '댓글이 작성되었습니다',
-      })
-      
-      setContent('')
-      onCommentSubmitted(comment)
-      
+        title: "댓글이 작성되었습니다",
+      });
+
+      setContent("");
+      onCommentSubmitted(comment);
+
       if (onCancel) {
-        onCancel()
+        onCancel();
       }
-      
     } catch (error) {
       toast({
-        title: '오류',
-        description: '댓글 작성 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      })
+        title: "오류",
+        description: "댓글 작성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
@@ -129,17 +113,17 @@ export function CommentForm({
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> 
+              <Loader2 className="h-4 w-4 animate-spin" />
               작성 중...
             </>
           ) : (
             <>
-              <Send className="h-4 w-4" /> 
+              <Send className="h-4 w-4" />
               {buttonText}
             </>
           )}
         </Button>
       </div>
     </form>
-  )
-} 
+  );
+}
