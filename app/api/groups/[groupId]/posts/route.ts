@@ -15,10 +15,10 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { title, content, challengeId, imageUrls } = body;
+    const { content, challengeId, imageUrls } = body;
 
-    if (!title || !content || !challengeId) {
-      return new NextResponse("Title, content, and challengeId are required", {
+    if (!content || !challengeId) {
+      return new NextResponse("content, and challengeId are required", {
         status: 400,
       });
     }
@@ -79,7 +79,6 @@ export async function POST(
 
     // 게시글 생성
     const post = await supabaseDb.insert("posts", {
-      title,
       content,
       challenge_id: challengeId,
       user_id: uuid,
@@ -234,7 +233,6 @@ export async function GET(
           // 명확한 응답 구조 반환
           return {
             id: post.id,
-            title: post.title,
             content: post.content,
             created_at: post.created_at,
             challenge_id: post.challenge_id,

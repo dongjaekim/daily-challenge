@@ -48,11 +48,11 @@ export async function PATCH(
 
     // 요청 본문 파싱
     const body = await req.json();
-    const { title, content, imageUrls } = body;
+    const { content, imageUrls } = body;
 
-    if (!title || !content) {
+    if (!content) {
       return NextResponse.json(
-        { error: "Title and content are required" },
+        { error: "Content are required" },
         { status: 400 }
       );
     }
@@ -76,7 +76,6 @@ export async function PATCH(
     const { data: updatedPost, error: updateError } = await supabase
       .from("posts")
       .update({
-        title,
         content,
         image_urls: Array.isArray(imageUrls) ? imageUrls : post.image_urls,
         updated_at: new Date().toISOString(),

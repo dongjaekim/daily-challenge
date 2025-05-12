@@ -101,7 +101,7 @@ export default async function PostPage({ params }: IPostPageProps) {
             </Avatar>
             <div className="flex-1">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
-                {post.title}
+                {post.challenge?.title}
               </h1>
               <div className="flex flex-wrap gap-2 text-sm md:text-base text-muted-foreground mt-1 md:mt-2">
                 <span className="font-medium">{post.author.name}</span>

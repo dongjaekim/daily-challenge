@@ -12,7 +12,6 @@ interface PostsState {
     }
   >;
 
-  // 게시글 캐시 유효 시간 (5분)
   cacheTimeMs: number;
 
   // 특정 그룹의 게시글 설정
@@ -56,9 +55,11 @@ interface PostsState {
 
   // 특정 그룹의 캐시 데이터 초기화
   invalidateCache: (groupId: string) => void;
+
+  autoCleanUp: () => void;
 }
 
-export const usePostsStore = create<PostsState>((set, get) => ({
+export const usePostsStore = create<PostsState>()((set, get) => ({
   postsByGroup: {},
   cacheTimeMs: 60 * 60 * 1000, // 1시간
 
@@ -103,9 +104,34 @@ export const usePostsStore = create<PostsState>((set, get) => ({
   getPost: (groupId: string, postId: string) => {
     const state = get();
 
+    // 캐시 유효성 확인
+    if (!state.arePostsCached(groupId)) {
+      state.invalidateCache(groupId); // 캐시 무효화
+      return null;
+    }
+
     const post = state.postsByGroup[groupId].posts.find(
       (post) => post.id === postId
     );
+
+    async function fetchPostFromDB(groupId: string, postId: string) {
+      try {
+        const response = await fetch(`/api/groups/${groupId}/posts/${postId}`);
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching post:", error);
+        return null;
+      }
+    }
+
+    if (!post) {
+      // DB에서 직접 조회 (비동기 처리 예시)
+      fetchPostFromDB(groupId, postId).then((fetchedPost) => {
+        if (fetchedPost) {
+          state.addPost(groupId, fetchedPost);
+        }
+      });
+    }
 
     return post || null;
   },
@@ -234,6 +260,19 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       return {
         postsByGroup: rest,
       };
+    });
+  },
+
+  autoCleanUp: () => {
+    set((state) => {
+      const now = Date.now();
+      const newPostsByGroup = { ...state.postsByGroup };
+      Object.entries(newPostsByGroup).forEach(([groupId, data]) => {
+        if (now - data.lastFetched > state.cacheTimeMs) {
+          delete newPostsByGroup[groupId];
+        }
+      });
+      return { postsByGroup: newPostsByGroup };
     });
   },
 }));

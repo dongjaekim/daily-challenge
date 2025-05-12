@@ -122,8 +122,8 @@ export default async function GroupPage({
               className="flex items-center gap-1.5 w-full justify-center py-2"
             >
               <CalendarIcon className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="hidden sm:inline">달력 뷰</span>
-              <span className="sm:hidden">달력</span>
+              <span className="hidden sm:inline">챌린지 캘린더</span>
+              <span className="sm:hidden">캘린더</span>
             </Link>
           </TabsTrigger>
           <TabsTrigger
@@ -136,7 +136,7 @@ export default async function GroupPage({
               className="flex items-center gap-1.5 w-full justify-center py-2"
             >
               <MessageSquareTextIcon className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="hidden sm:inline">게시판 뷰</span>
+              <span className="hidden sm:inline">게시판</span>
               <span className="sm:hidden">게시판</span>
             </Link>
           </TabsTrigger>
@@ -150,7 +150,7 @@ export default async function GroupPage({
               className="flex items-center gap-1.5 w-full justify-center py-2"
             >
               <BarChart3Icon className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="hidden sm:inline">통계 뷰</span>
+              <span className="hidden sm:inline">통계</span>
               <span className="sm:hidden">통계</span>
             </Link>
           </TabsTrigger>

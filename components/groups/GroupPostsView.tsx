@@ -177,7 +177,7 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                     <div className="flex-1">
                       <h3 className="font-medium text-base md:text-lg">
-                        {post.title}
+                        {post.challenge?.title}
                       </h3>
                       <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-1">
                         <span>{post.author?.name}</span>

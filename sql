@@ -58,7 +58,6 @@ create table posts (
   challenge_id uuid references challenges(id) on delete cascade,
   user_id uuid references users(id) on delete cascade,
   group_id uuid references groups(id) on delete cascade,
-  title text not null,
   content text not null,
   image_urls text[] default '{}',
   like_count integer default 0,

@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 export async function uploadFile(formData: FormData) {
   const file = formData.get("file") as File;
 
-  const { data, error } = await supabase.storage
+  const { data } = await supabase.storage
     .from(process.env.NEXT_PUBLIC_STORAGE_BUCKET || "")
     .upload(file.name, file, { upsert: true });
 
@@ -15,7 +15,7 @@ export function getImageUrl(path: string) {
 }
 
 export async function searchFiles(search: string = "") {
-  const { data, error } = await supabase.storage
+  const { data } = await supabase.storage
     .from(process.env.NEXT_PUBLIC_STORAGE_BUCKET || "")
     .list(search);
 
