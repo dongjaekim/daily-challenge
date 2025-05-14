@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useUserUuid } from "@/utils/auth";
+import { useCreateGroup, useUpdateGroup } from "@/lib/mutations/groupMutations";
 
 interface IGroupFormProps {
   initialData?: {
@@ -15,7 +14,7 @@ interface IGroupFormProps {
   };
   groupId?: string;
   setOpen?: (open: boolean) => void;
-  onSuccess?: (newGroup: any) => void;
+  onSuccess?: () => void;
 }
 
 export const GroupForm = ({
@@ -25,26 +24,17 @@ export const GroupForm = ({
   onSuccess,
 }: IGroupFormProps) => {
   const { toast } = useToast();
-  const router = useRouter();
-  const { uuid, isLoading: isLoadingUuid } = useUserUuid();
+  const { mutateAsync: createGroup, isPending: isCreating } = useCreateGroup();
+  const { mutateAsync: updateGroup, isPending: isUpdating } = useUpdateGroup();
 
   const [name, setName] = useState(initialData?.name || "");
   const [description, setDescription] = useState(
     initialData?.description || ""
   );
-  const [isLoading, setIsLoading] = useState(false);
-
-  if (isLoadingUuid) {
-    return <div>로딩 중...</div>;
-  }
-
-  if (!uuid) {
-    return <div>UUID를 찾을 수 없습니다. 로그인이 필요합니다.</div>;
-  }
+  const isLoading = isCreating || isUpdating;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (isLoading) return;
 
     if (!name) {
@@ -57,23 +47,13 @@ export const GroupForm = ({
     }
 
     try {
-      setIsLoading(true);
-
       if (groupId) {
         // 모임 정보 업데이트
-        const response = await fetch(`/api/groups/${groupId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name, description }),
+        await updateGroup({
+          id: groupId,
+          name,
+          description,
         });
-
-        if (!response.ok) {
-          throw new Error("모임 업데이트 실패");
-        }
-
-        const updatedGroup = await response.json();
 
         toast({
           title: "성공",
@@ -81,29 +61,13 @@ export const GroupForm = ({
         });
 
         // 다이얼로그 닫기
-        if (setOpen) {
-          setOpen(false);
-        }
+        setOpen?.(false);
 
         // 수정 성공 콜백
-        if (onSuccess) {
-          onSuccess(updatedGroup);
-        }
+        onSuccess?.();
       } else {
         // 새 모임 생성
-        const response = await fetch("/api/groups", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name, description }),
-        });
-
-        if (!response.ok) {
-          throw new Error("모임 생성 실패");
-        }
-
-        const newGroup = await response.json();
+        await createGroup({ name, description });
 
         toast({
           title: "성공",
@@ -111,24 +75,19 @@ export const GroupForm = ({
         });
 
         // 다이얼로그 닫기
-        if (setOpen) {
-          setOpen(false);
-        }
+        setOpen?.(false);
 
-        // 생성 성공 콜백
-        if (onSuccess) {
-          onSuccess(newGroup);
-        }
+        setName("");
+        setDescription("");
       }
     } catch (error) {
       console.error("Error:", error);
       toast({
         variant: "destructive",
         title: "오류",
-        description: "서버 오류가 발생했습니다.",
+        description:
+          error instanceof Error ? error.message : "서버 오류가 발생했습니다.",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

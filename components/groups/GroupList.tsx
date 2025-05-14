@@ -5,7 +5,6 @@ import { EditGroupButton } from "@/components/groups/EditGroupButton";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { IGroup } from "@/types";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -17,48 +16,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2 } from "lucide-react";
+import { getGroups } from "@/lib/queries/groupQuery";
+import { groupQueryKeys } from "@/lib/queries/groupQuery";
+import { useQuery } from "@tanstack/react-query";
+import { useDeleteGroup } from "@/lib/mutations/groupMutations";
 
-interface IGroupListProps {
-  groups: IGroup[];
-  onGroupDeleted?: (groupId: string) => void;
-  onGroupUpdated?: (newGroup: any) => void;
-}
-
-export function GroupList({
-  groups,
-  onGroupDeleted,
-  onGroupUpdated,
-}: IGroupListProps) {
-  const [isLoading, setIsLoading] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+export function GroupList() {
   const [openEditId, setOpenEditId] = useState<string | null>(null);
   const [openDeleteId, setOpenDeleteId] = useState<string | null>(null);
+  const { mutateAsync, isPending: isDeleting } = useDeleteGroup();
   const { toast } = useToast();
   const router = useRouter();
 
+  const { data: groups } = useQuery({
+    queryKey: groupQueryKeys.getAll(),
+    queryFn: getGroups,
+  });
+
   const handleDelete = async (groupId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // 이벤트 버블링 방지
-    setIsLoading(groupId);
-    setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/groups/${groupId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("모임 삭제에 실패했습니다.");
-      }
+      await mutateAsync(groupId);
 
       toast({
         title: "성공",
         description: "모임이 삭제되었습니다.",
       });
-
-      if (onGroupDeleted) {
-        onGroupDeleted(groupId);
-      }
     } catch (error) {
       toast({
         title: "오류",
@@ -66,8 +50,7 @@ export function GroupList({
         variant: "destructive",
       });
     } finally {
-      setIsLoading(null);
-      setIsDeleting(false);
+      setOpenDeleteId(null);
     }
   };
 
@@ -77,7 +60,7 @@ export function GroupList({
 
   return (
     <div className="space-y-4">
-      {groups.map((group) => (
+      {groups?.map((group) => (
         <div
           key={group.id}
           className="flex items-center justify-between rounded-lg border p-4 hover:bg-accent/50 cursor-pointer transition-colors"
@@ -93,17 +76,14 @@ export function GroupList({
             <h3 className="font-medium">{group.name}</h3>
             <p className="text-sm text-muted-foreground">{group.description}</p>
             <p className="text-sm text-muted-foreground">
-              멤버 수: {group.memberCount}명
+              멤버 수: {group.member_count}명
             </p>
           </div>
           {group.role === "owner" && (
             <div className="flex gap-2">
               <EditGroupButton
                 group={group}
-                onGroupUpdated={(newGroup) => {
-                  if (onGroupUpdated) {
-                    onGroupUpdated(newGroup);
-                  }
+                onGroupUpdated={() => {
                   setOpenEditId(null);
                 }}
                 handleButtonClick={(e) => {
@@ -118,17 +98,10 @@ export function GroupList({
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="destructive"
-                    disabled={isLoading === group.id}
+                    disabled={group.id === openDeleteId}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {isLoading === group.id ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        삭제 중...
-                      </>
-                    ) : (
-                      "삭제"
-                    )}
+                    삭제
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

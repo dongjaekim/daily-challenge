@@ -8,7 +8,7 @@ import { useState } from "react";
 
 interface IUpdateGroupButtonProps {
   group: IGroup;
-  onGroupUpdated?: (newGroup: any) => void;
+  onGroupUpdated?: () => void;
   handleButtonClick: (e: React.MouseEvent) => void;
 }
 
@@ -20,11 +20,8 @@ export const EditGroupButton = ({
   const [open, setOpen] = useState(false);
 
   // 새 모임 생성 후 콜백 처리
-  const handleGroupUpdated = (newGroup: any) => {
-    if (onGroupUpdated) {
-      onGroupUpdated(newGroup);
-    }
-    setOpen(false);
+  const handleGroupUpdated = () => {
+    onGroupUpdated?.();
   };
 
   return (
