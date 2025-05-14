@@ -1,40 +1,46 @@
 import { NextResponse } from "next/server";
 import { supabaseDb } from "@/db";
 import { getSupabaseUuid } from "@/utils/server-auth";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
   try {
     const uuid = await getSupabaseUuid();
 
     if (!uuid) {
-      return new NextResponse("User not found", { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // 사용자가 속한 그룹 목록 조회 - 이제 UUID 사용
-    const groupMembers = await supabaseDb.select("group_members", {
-      user_id: uuid,
-    });
-    const groupIds = groupMembers.map((m: any) => m.group_id);
+    const { data, error } = await supabase
+      .from("group_members")
+      .select(
+        `
+        role, 
+        groups:group_id (
+          id,
+          name,
+          member_count,
+          description,
+          created_by,
+          created_at,
+          updated_at
+        )
+      `
+      )
+      .eq("user_id", uuid);
 
-    const groups = [];
-    for (const groupId of groupIds) {
-      const groupsArr = await supabaseDb.select("groups", { id: groupId });
-      const group = groupsArr[0];
-      if (group) {
-        // 각 그룹의 멤버 수 조회
-        const members = await supabaseDb.select("group_members", {
-          group_id: groupId,
-        });
-        groups.push({
-          ...group,
-          memberCount: members.length,
-          role:
-            groupMembers.find((m: any) => m.group_id === groupId)?.role || null,
-        });
-      }
+    if (error) {
+      console.error("[GROUPS_GET_SUPABASE]", error);
+      return new NextResponse("Database Error", { status: 500 });
     }
 
-    return NextResponse.json(groups);
+    const transformedData = data.map((item: any) => ({
+      ...item.groups,
+      role: item.role,
+      image_url: item.groups.image_url || null,
+    }));
+
+    return NextResponse.json(transformedData);
   } catch (error) {
     console.error("[GROUPS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });
@@ -46,7 +52,7 @@ export async function POST(request: Request) {
     const uuid = await getSupabaseUuid();
 
     if (!uuid) {
-      return new NextResponse("User not found", { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const body = await request.json();
@@ -74,7 +80,11 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     });
 
-    return NextResponse.json({ ...group, members: [groupMember] });
+    return NextResponse.json({
+      ...group,
+      member_count: 1,
+      role: "owner",
+    });
   } catch (error) {
     console.error("[GROUPS_POST]", error);
     return new NextResponse("Internal error", { status: 500 });

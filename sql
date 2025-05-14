@@ -242,3 +242,27 @@ CREATE TRIGGER comment_soft_delete
 AFTER UPDATE OF is_deleted ON post_comments
 FOR EACH ROW
 EXECUTE FUNCTION decrement_comment_count();
+
+CREATE OR REPLACE FUNCTION increment_member_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE groups SET member_count = member_count + 1 WHERE id = NEW.group_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER member_added
+AFTER INSERT ON group_members
+FOR EACH ROW EXECUTE FUNCTION increment_member_count();
+
+CREATE OR REPLACE FUNCTION decrement_member_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE groups SET member_count = member_count - 1 WHERE id = OLD.group_id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER member_removed
+AFTER DELETE ON group_members
+FOR EACH ROW EXECUTE FUNCTION decrement_member_count();
