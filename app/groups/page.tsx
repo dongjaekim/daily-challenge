@@ -1,5 +1,5 @@
 import { getSupabaseUuid } from "@/utils/server-auth";
-import { ClientGroupPage } from "@/components/groups/ClientGroupPage";
+import { ClientGroupListPage } from "@/components/groups/ClientGroupListPage";
 import { dehydrate } from "@tanstack/react-query";
 import { groupQueryKeys } from "@/lib/queries/groupQuery";
 import { getGroups } from "@/lib/queries/groupQuery";
@@ -20,5 +20,5 @@ export default async function GroupsPage() {
     queryFn: getGroups,
   });
 
-  return <ClientGroupPage dehydratedState={dehydrate(queryClient)} />;
+  return <ClientGroupListPage dehydratedState={dehydrate(queryClient)} />;
 }

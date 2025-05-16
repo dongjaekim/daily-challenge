@@ -4,11 +4,13 @@ import { GroupList } from "@/components/groups/GroupList";
 import { CreateGroupButton } from "@/components/groups/CreateGroupButton";
 import { DehydratedState, HydrationBoundary } from "@tanstack/react-query";
 
-interface IClientGroupPageProps {
+interface IClientGroupListPageProps {
   dehydratedState: DehydratedState;
 }
 
-export function ClientGroupPage({ dehydratedState }: IClientGroupPageProps) {
+export function ClientGroupListPage({
+  dehydratedState,
+}: IClientGroupListPageProps) {
   return (
     <HydrationBoundary state={dehydratedState}>
       <div className="container mx-auto py-8">
