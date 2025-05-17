@@ -25,13 +25,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useChallengeRecordsStore } from "@/store/challenge-records";
 import {
   Dialog,
@@ -40,16 +33,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IChallenge, IChallengeRecord } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getChallenges,
+  challengeQueryKeys,
+} from "@/lib/queries/challengeQuery";
 
 interface IGroupCalendarViewProps {
   groupId: string;
-  challenges: IChallenge[];
 }
 
-export function GroupCalendarView({
-  groupId,
-  challenges,
-}: IGroupCalendarViewProps) {
+export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -58,7 +52,6 @@ export function GroupCalendarView({
   >([]);
   const [records, setRecords] = useState<IChallengeRecord[]>([]);
   const isMounted = useRef(true);
-  const challengesLengthRef = useRef(challenges.length);
 
   // 챌린지 레코드 스토어 접근 - 개별 함수로 분리
   const getRecords = useChallengeRecordsStore((state) => state.getRecords);
@@ -70,13 +63,18 @@ export function GroupCalendarView({
     (state) => state.invalidateCache
   );
 
+  const { data: challenges } = useQuery({
+    queryKey: challengeQueryKeys.getAll(groupId),
+    queryFn: () => getChallenges(groupId),
+  });
+  const challengesLength = challenges?.length;
+
   // 챌린지 기록 가져오기
   useEffect(() => {
     isMounted.current = true;
-    challengesLengthRef.current = challenges.length;
 
     const fetchRecords = async () => {
-      if (!groupId || challengesLengthRef.current === 0) return;
+      if (!groupId || challengesLength === 0) return;
 
       // 캐시가 유효한 경우 캐시된 데이터 사용
       if (areRecordsCached(groupId)) {
@@ -396,14 +394,15 @@ export function GroupCalendarView({
           </div>
         </div>
 
-        {challenges.length === 0 && (
+        {challenges?.length === 0 && (
           <div className="text-center mt-8 text-muted-foreground">
             아직 등록된 챌린지가 없습니다.
             <br />
             새로운 챌린지를 등록해 보세요!
           </div>
         )}
-        {challenges.length > 0 && hasNoRecords && (
+        {/* {challenges?.length > 0 && hasNoRecords && ( */}
+        {hasNoRecords && (
           <div className="text-center mt-8 text-muted-foreground">
             아직 참여한 챌린지 기록이 없습니다.
             <br />
@@ -448,7 +447,7 @@ export function GroupCalendarView({
                     </div>
                     <ul className="ml-8 list-disc">
                       {userRecords.map((record) => {
-                        const challenge = challenges.find(
+                        const challenge = challenges?.find(
                           (c) => c.id === record.challenge_id
                         );
                         return (

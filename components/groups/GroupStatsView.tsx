@@ -22,6 +22,11 @@ import {
 import { useChallengeRecordsStore } from "@/store/challenge-records";
 import { Loader2 } from "lucide-react";
 import { IChallenge } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getChallenges,
+  challengeQueryKeys,
+} from "@/lib/queries/challengeQuery";
 
 interface IStats {
   challengeId: string;
@@ -34,15 +39,13 @@ interface IStats {
 
 interface IGroupStatsViewProps {
   groupId: string;
-  challenges: IChallenge[];
 }
 
-export function GroupStatsView({ groupId, challenges }: IGroupStatsViewProps) {
+export function GroupStatsView({ groupId }: IGroupStatsViewProps) {
   const [stats, setStats] = useState<IStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("progress");
   const isMounted = useRef(true);
-  const challengesLengthRef = useRef(challenges.length);
 
   // 챌린지 레코드 스토어 접근 - 필요한 함수만 선택적으로 가져옴
   const getRecords = useChallengeRecordsStore((state) => state.getRecords);
@@ -54,13 +57,18 @@ export function GroupStatsView({ groupId, challenges }: IGroupStatsViewProps) {
     (state) => state.invalidateCache
   );
 
+  const { data: challenges } = useQuery({
+    queryKey: challengeQueryKeys.getAll(groupId),
+    queryFn: () => getChallenges(groupId),
+  });
+  const challengesLength = challenges?.length;
+
   useEffect(() => {
     // 마운트 상태 초기화
     isMounted.current = true;
-    challengesLengthRef.current = challenges.length;
 
     async function fetchStats() {
-      if (challengesLengthRef.current === 0) {
+      if (challengesLength === 0) {
         if (isMounted.current) {
           setIsLoading(false);
         }
@@ -96,7 +104,7 @@ export function GroupStatsView({ groupId, challenges }: IGroupStatsViewProps) {
         // 레코드 데이터를 기반으로 통계 생성
         if (localRecords.length > 0) {
           // 각 챌린지별 통계 계산
-          const challengeStats = challenges.map((challenge) => {
+          const challengeStats = challenges?.map((challenge) => {
             // 이 챌린지에 대한 기록 필터링
             const challengeRecords = localRecords.filter(
               (record) => record.challenge_id === challenge.id
@@ -128,11 +136,11 @@ export function GroupStatsView({ groupId, challenges }: IGroupStatsViewProps) {
           });
 
           if (isMounted.current) {
-            setStats(challengeStats);
+            setStats(challengeStats!);
           }
         } else {
           // API가 구현되지 않은 경우 더미 데이터 생성
-          const dummyStats = challenges.map((challenge) => {
+          const dummyStats = challenges?.map((challenge) => {
             const progress = Math.floor(Math.random() * 100);
             const totalDays = 30;
             const completedDays = Math.floor(totalDays * (progress / 100));
@@ -148,7 +156,7 @@ export function GroupStatsView({ groupId, challenges }: IGroupStatsViewProps) {
           });
 
           if (isMounted.current) {
-            setStats(dummyStats);
+            setStats(dummyStats!);
           }
         }
       } catch (error) {
@@ -203,7 +211,8 @@ export function GroupStatsView({ groupId, challenges }: IGroupStatsViewProps) {
           <div className="flex justify-center items-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : challenges.length > 0 ? (
+        ) : // ) : challenges.length > 0 ? (
+        challenges?.length ?? 0 > 0 ? (
           <div className="space-y-6">
             <div className="space-y-2">
               <h3 className="text-lg font-medium">모임 평균 달성률</h3>

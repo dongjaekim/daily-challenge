@@ -29,13 +29,17 @@ import { IChallenge, IPost } from "@/types";
 import { usePostsStore } from "@/store/posts";
 import { useChallengesStore } from "@/store/challenges";
 import { LikeButton } from "@/components/posts/LikeButton";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getChallenges,
+  challengeQueryKeys,
+} from "@/lib/queries/challengeQuery";
 
 interface GroupPostsViewProps {
   groupId: string;
-  challenges: IChallenge[];
 }
 
-export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
+export function GroupPostsView({ groupId }: GroupPostsViewProps) {
   const [selectedChallenge, setSelectedChallenge] = useState<string>("all");
   const [posts, setPosts] = useState<IPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,12 +55,17 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
   // 챌린지 스토어
   const { setChallenges: setStoreChallenges } = useChallengesStore();
 
+  const { data: challenges } = useQuery({
+    queryKey: challengeQueryKeys.getAll(groupId),
+    queryFn: () => getChallenges(groupId),
+  });
+
   // 최초 마운트 시 챌린지 저장
   useEffect(() => {
     if (challenges && challenges.length > 0) {
       setStoreChallenges(groupId, challenges);
     }
-  }, [challenges.length, groupId, setStoreChallenges]);
+  }, [challenges?.length, groupId, setStoreChallenges]);
 
   useEffect(() => {
     async function fetchPosts() {
@@ -142,7 +151,7 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">모든 챌린지</SelectItem>
-              {challenges.map((challenge) => (
+              {challenges?.map((challenge) => (
                 <SelectItem key={challenge.id} value={challenge.id}>
                   {challenge.title}
                 </SelectItem>
@@ -263,7 +272,8 @@ export function GroupPostsView({ groupId, challenges }: GroupPostsViewProps) {
           </div>
         ) : (
           <div className="text-center py-16 md:py-20 text-muted-foreground">
-            {challenges.length > 0
+            {/* {challenges?.length > 0 */}
+            {challenges?.length
               ? "아직 게시글이 없습니다. 첫 게시글을 작성해보세요!"
               : "등록된 챌린지가 없습니다. 챌린지를 먼저 등록해주세요."}
           </div>
