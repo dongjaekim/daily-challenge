@@ -93,7 +93,7 @@ export interface IGroupMember {
   id: string;
   group_id: string;
   user_id: string;
-  role: "owner" | "admin" | "member";
+  role: "owner" | "member";
   created_at: string;
   updated_at: string;
   user?: IUser;
