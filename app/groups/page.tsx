@@ -20,5 +20,5 @@ export default async function GroupsPage() {
     queryFn: getGroups,
   });
 
-  return <ClientGroupListPage dehydratedState={dehydrate(queryClient)} />;
+  return <ClientGroupListPage />;
 }
