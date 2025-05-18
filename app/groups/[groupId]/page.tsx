@@ -1,7 +1,7 @@
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { groupQueryKeys, getGroups } from "@/lib/queries/groupQuery";
+import { groupQueryKeys, getGroup } from "@/lib/queries/groupQuery";
 import {
   challengeQueryKeys,
   getChallenges,
@@ -36,8 +36,8 @@ export default async function GroupPage({
   const queryClient = makeQueryClient();
 
   queryClient.prefetchQuery({
-    queryKey: groupQueryKeys.getAll(),
-    queryFn: getGroups,
+    queryKey: groupQueryKeys.getOne(params.groupId),
+    queryFn: () => getGroup(params.groupId),
   });
 
   queryClient.prefetchQuery({

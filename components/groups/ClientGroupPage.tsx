@@ -1,6 +1,6 @@
 "use client";
 
-import { getGroups, groupQueryKeys } from "@/lib/queries/groupQuery";
+import { getGroup, getGroups, groupQueryKeys } from "@/lib/queries/groupQuery";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
@@ -33,11 +33,10 @@ export default function ClientGroupPage({
   currentTab,
   uuid,
 }: IClientGroupPageProps) {
-  const { data: groups } = useQuery({
-    queryKey: groupQueryKeys.getAll(),
-    queryFn: getGroups,
+  const { data: group } = useQuery({
+    queryKey: groupQueryKeys.getOne(groupId),
+    queryFn: () => getGroup(groupId),
   });
-  const group = groups?.find((g) => g.id === groupId);
 
   const { data: me, isPending } = useQuery({
     queryKey: groupMemberQueryKeys.getOne(groupId, uuid),

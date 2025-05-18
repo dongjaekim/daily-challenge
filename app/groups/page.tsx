@@ -1,11 +1,10 @@
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { ClientGroupListPage } from "@/components/groups/ClientGroupListPage";
-import { dehydrate } from "@tanstack/react-query";
 import { groupQueryKeys } from "@/lib/queries/groupQuery";
 import { getGroups } from "@/lib/queries/groupQuery";
 import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 
-export default async function GroupsPage() {
+export default async function GroupListPage() {
   const uuid = await getSupabaseUuid();
 
   if (!uuid) {
