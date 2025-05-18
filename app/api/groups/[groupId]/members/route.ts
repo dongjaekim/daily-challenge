@@ -50,9 +50,7 @@ export async function GET(
 
     // 그룹 멤버 여부 확인
     if (memberArr.some((m: any) => m.user_id === uuid)) {
-      return new NextResponse("Unauthorized - Not member of group", {
-        status: 401,
-      });
+      return new NextResponse("Not member of this group", { status: 404 });
     }
 
     return NextResponse.json(memberArr);

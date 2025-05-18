@@ -61,10 +61,8 @@ export async function GET(
       group_id: params.groupId,
       user_id: uuid,
     });
-    if (!memberArr.length) {
-      return new NextResponse("Unauthorized - Not member of group", {
-        status: 401,
-      });
+    if (!memberArr) {
+      return new NextResponse("Not member of this group", { status: 404 });
     }
 
     const groupChallenges = await supabaseDb.select("challenges", {
