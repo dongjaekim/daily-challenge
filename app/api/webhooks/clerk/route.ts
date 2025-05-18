@@ -56,8 +56,37 @@ export async function POST(req: Request) {
   const eventType = evt.type;
   console.log("eventType", eventType);
 
+  // 이름 생성 함수
+  function getUserName(
+    first_name: string | null | undefined,
+    last_name: string | null | undefined,
+    email: string
+  ) {
+    if (first_name && last_name) {
+      return `${first_name} ${last_name}`.trim();
+    }
+    if (first_name) {
+      return first_name;
+    }
+    if (last_name) {
+      return last_name;
+    }
+    return email.split("@")[0];
+  }
+
   if (eventType === "user.created" || eventType === "user.updated") {
     const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const name = getUserName(
+      first_name,
+      last_name,
+      email_addresses[0].email_address
+    );
+
+    const avatar_url =
+      image_url ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+        name.replace(/\s+/g, "+")
+      )}`;
 
     try {
       const { data, error } = await supabase
@@ -66,8 +95,8 @@ export async function POST(req: Request) {
           {
             clerk_id: id,
             email: email_addresses[0].email_address,
-            name: `${first_name} ${last_name}`.trim(),
-            avatar_url: image_url,
+            name: name,
+            avatar_url: avatar_url,
             updated_at: new Date().toISOString(),
           },
           {
