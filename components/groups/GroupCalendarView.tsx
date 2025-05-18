@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import {
   format,
   startOfMonth,
@@ -10,7 +10,6 @@ import {
   isSameDay,
   addMonths,
   subMonths,
-  parseISO,
   startOfWeek,
   endOfWeek,
 } from "date-fns";
@@ -25,7 +24,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { useChallengeRecordsStore } from "@/store/challenge-records";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +36,10 @@ import {
   getChallenges,
   challengeQueryKeys,
 } from "@/lib/queries/challengeQuery";
+import {
+  challengeRecordQueryKeys,
+  getChallengeRecords,
+} from "@/lib/queries/challengeRecordQuery";
 
 interface IGroupCalendarViewProps {
   groupId: string;
@@ -45,83 +47,20 @@ interface IGroupCalendarViewProps {
 
 export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [selectedDayRecords, setSelectedDayRecords] = useState<
-    IChallengeRecord[]
-  >([]);
-  const [records, setRecords] = useState<IChallengeRecord[]>([]);
-  const isMounted = useRef(true);
-
-  // 챌린지 레코드 스토어 접근 - 개별 함수로 분리
-  const getRecords = useChallengeRecordsStore((state) => state.getRecords);
-  const storeSetRecords = useChallengeRecordsStore((state) => state.setRecords);
-  const areRecordsCached = useChallengeRecordsStore(
-    (state) => state.areRecordsCached
-  );
-  const invalidateCache = useChallengeRecordsStore(
-    (state) => state.invalidateCache
-  );
 
   const { data: challenges } = useQuery({
     queryKey: challengeQueryKeys.getAll(groupId),
     queryFn: () => getChallenges(groupId),
   });
-  const challengesLength = challenges?.length;
 
-  // 챌린지 기록 가져오기
-  useEffect(() => {
-    isMounted.current = true;
+  const { data: challengeRecords, isPending } = useQuery({
+    queryKey: challengeRecordQueryKeys.getAll(groupId),
+    queryFn: () => getChallengeRecords(groupId),
+    enabled: !!groupId,
+  });
 
-    const fetchRecords = async () => {
-      if (!groupId || challengesLength === 0) return;
-
-      // 캐시가 유효한 경우 캐시된 데이터 사용
-      if (areRecordsCached(groupId)) {
-        const cachedData = getRecords(groupId);
-        if (cachedData && isMounted.current) {
-          console.log(`${cachedData.length}개의 캐시된 챌린지 기록 사용`);
-          setRecords(cachedData);
-          return;
-        }
-      }
-
-      // 캐시가 없거나 유효하지 않은 경우에만 API 호출
-      if (isMounted.current) {
-        setLoading(true);
-      }
-
-      try {
-        const response = await fetch(
-          `/api/groups/${groupId}/challenge-records?_t=${Date.now()}`
-        );
-        if (response.ok && isMounted.current) {
-          const data = await response.json();
-          console.log(`${data.length}개의 챌린지 기록 조회 완료`);
-
-          // 로컬 상태에 직접 저장
-          setRecords(data);
-
-          // 스토어에도 저장
-          storeSetRecords(groupId, data);
-        } else {
-          console.error("API 호출 실패:", response.status, response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching challenge records:", error);
-      } finally {
-        if (isMounted.current) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchRecords();
-
-    return () => {
-      isMounted.current = false;
-    };
-  }, [groupId, storeSetRecords, getRecords, areRecordsCached]);
+  const records = challengeRecords || [];
 
   // 이전 달로 이동
   const prevMonth = () => {
@@ -154,9 +93,8 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
   const today = new Date();
 
   // 선택한 날짜의 기록 보기
-  const handleDayClick = (dateStr: string, records: IChallengeRecord[]) => {
+  const handleDayClick = (dateStr: string) => {
     setSelectedDay(dateStr);
-    setSelectedDayRecords(records);
   };
 
   // 사용자별 색상 생성 (고정 색상)
@@ -249,7 +187,7 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
   }, [recordsByDate]);
 
   // 빈 레코드 확인
-  const hasNoRecords = records.length === 0 && !loading;
+  const hasNoRecords = records.length === 0 && !isPending;
 
   const getUniqueUsers = () => {
     const usersMap = new Map<string, string>();
@@ -289,7 +227,7 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
       </CardHeader>
       <CardContent className="flex flex-col h-auto">
         <div className="relative w-full max-w-full mx-auto">
-          {loading ? (
+          {isPending ? (
             <div className="flex justify-center items-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
@@ -328,8 +266,7 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
                     ${isToday ? "border-primary" : ""}
                   `}
                       onClick={() =>
-                        dayRecords.length > 0 &&
-                        handleDayClick(dateStr, dayRecords)
+                        dayRecords.length > 0 && handleDayClick(dateStr)
                       }
                       style={{
                         cursor: dayRecords.length > 0 ? "pointer" : "default",

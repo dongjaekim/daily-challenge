@@ -1,7 +1,7 @@
 import { IChallenge } from "@/types";
 
 export const challengeQueryKeys = {
-  getAll: (groupId: string) => ["challenges"] as const,
+  getAll: (groupId: string) => ["groups", groupId, "challenges"] as const,
   getOne: (groupId: string, challengeId: string) =>
     [...challengeQueryKeys.getAll(groupId), challengeId] as const,
 };

@@ -1,7 +1,7 @@
 import { IGroupMember } from "@/types";
 
 export const groupMemberQueryKeys = {
-  getAll: (groupId: string) => ["group_members"] as const,
+  getAll: (groupId: string) => ["groups", groupId, "group_members"] as const,
   getOne: (groupId: string, userId: string) =>
     [...groupMemberQueryKeys.getAll(groupId), userId] as const,
 };

@@ -9,7 +9,13 @@ import {
 import {
   groupMemberQueryKeys,
   getGroupMembers,
+  getGroupMember,
 } from "@/lib/queries/groupMemberQuery";
+import { getPosts, postQueryKeys } from "@/lib/queries/postQuery";
+import {
+  getChallengeRecords,
+  challengeRecordQueryKeys,
+} from "@/lib/queries/challengeRecordQuery";
 import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 import ClientGroupPage from "@/components/groups/ClientGroupPage";
 
@@ -41,13 +47,23 @@ export default async function GroupPage({
   });
 
   queryClient.prefetchQuery({
+    queryFn: () => getGroupMember(params.groupId, uuid),
+    queryKey: groupMemberQueryKeys.getOne(params.groupId, uuid),
+  });
+
+  queryClient.prefetchQuery({
     queryKey: challengeQueryKeys.getAll(params.groupId),
     queryFn: () => getChallenges(params.groupId),
   });
 
   queryClient.prefetchQuery({
-    queryKey: groupMemberQueryKeys.getAll(params.groupId),
-    queryFn: () => getGroupMembers(params.groupId),
+    queryKey: postQueryKeys.getAll(params.groupId),
+    queryFn: () => getPosts(params.groupId),
+  });
+
+  queryClient.prefetchQuery({
+    queryKey: challengeRecordQueryKeys.getAll(params.groupId),
+    queryFn: () => getChallengeRecords(params.groupId),
   });
 
   // 현재 선택된 탭

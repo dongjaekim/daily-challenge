@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Loader2, MessageSquare, Trash } from "lucide-react";
 import { usePostsStore } from "@/store/posts";
-import { useChallengeRecordsStore } from "@/store/challenge-records";
 import { useChallengesStore } from "@/store/challenges";
 import { IPost, IPostComment } from "@/types";
 
@@ -57,12 +56,9 @@ export function PostDetail({
   const updateCommentCount = usePostsStore((state) => state.updateCommentCount);
 
   // 챌린지 레코드 스토어 접근
-  const invalidateRecordsCache = useChallengeRecordsStore(
-    (state) => state.invalidateCache
-  );
-  const updateRecordsCacheTimestamp = useChallengeRecordsStore(
-    (state) => state.updateCacheTimestamp
-  );
+  // const updateRecordsCacheTimestamp = useChallengeRecordsStore(
+  //   (state) => state.updateCacheTimestamp
+  // );
 
   // 챌린지 스토어 접근
   const invalidateChallengesCache = useChallengesStore(
@@ -156,7 +152,7 @@ export function PostDetail({
       deletePost(groupId, postId);
 
       // 챌린지 레코드와 챌린지 캐시 타임스탬프 업데이트
-      updateRecordsCacheTimestamp(groupId);
+      // updateRecordsCacheTimestamp(groupId);
       updateChallengesCacheTimestamp(groupId);
 
       // 모임의 게시판 뷰로 이동

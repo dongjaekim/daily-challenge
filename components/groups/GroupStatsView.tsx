@@ -19,14 +19,16 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useChallengeRecordsStore } from "@/store/challenge-records";
 import { Loader2 } from "lucide-react";
-import { IChallenge } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import {
   getChallenges,
   challengeQueryKeys,
 } from "@/lib/queries/challengeQuery";
+import {
+  getChallengeRecords,
+  challengeRecordQueryKeys,
+} from "@/lib/queries/challengeRecordQuery";
 
 interface IStats {
   challengeId: string;
@@ -43,141 +45,56 @@ interface IGroupStatsViewProps {
 
 export function GroupStatsView({ groupId }: IGroupStatsViewProps) {
   const [stats, setStats] = useState<IStats[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("progress");
   const isMounted = useRef(true);
 
-  // 챌린지 레코드 스토어 접근 - 필요한 함수만 선택적으로 가져옴
-  const getRecords = useChallengeRecordsStore((state) => state.getRecords);
-  const setRecords = useChallengeRecordsStore((state) => state.setRecords);
-  const areRecordsCached = useChallengeRecordsStore(
-    (state) => state.areRecordsCached
-  );
-  const invalidateCache = useChallengeRecordsStore(
-    (state) => state.invalidateCache
-  );
-
-  const { data: challenges } = useQuery({
+  const { data: challenges, isPending: isChallengeLoading } = useQuery({
     queryKey: challengeQueryKeys.getAll(groupId),
     queryFn: () => getChallenges(groupId),
   });
-  const challengesLength = challenges?.length;
+  const challengeLength = challenges?.length || 0;
 
-  useEffect(() => {
-    // 마운트 상태 초기화
-    isMounted.current = true;
+  const { data: challengeRecords, isPending } = useQuery({
+    queryKey: challengeRecordQueryKeys.getAll(groupId),
+    queryFn: () => getChallengeRecords(groupId),
+    enabled: !!groupId && !!challenges?.length,
+  });
 
-    async function fetchStats() {
-      if (challengesLength === 0) {
-        if (isMounted.current) {
-          setIsLoading(false);
-        }
-        return;
-      }
+  const records = challengeRecords || [];
 
-      if (isMounted.current) {
-        setIsLoading(true);
-      }
+  const challengeStats = challenges?.map((challenge) => {
+    // 이 챌린지에 대한 기록 필터링
+    const challengeRecords = records.filter(
+      (record) => record.challenge_id === challenge.id
+    );
 
-      try {
-        let localRecords: any[] = [];
+    // 완료된 날짜 수 (중복 날짜 제거)
+    const uniqueDates = new Set(
+      challengeRecords.map(
+        (record) => new Date(record.created_at).toISOString().split("T")[0]
+      )
+    );
 
-        // 캐시가 있고 유효한 경우 캐시된 데이터 사용
-        if (areRecordsCached(groupId)) {
-          localRecords = getRecords(groupId) || [];
-          console.log(
-            `${localRecords.length}개의 캐시된 챌린지 기록 사용 (통계 뷰)`
-          );
-        } else {
-          // 캐시가 없거나 유효하지 않은 경우에만 API 호출
-          const response = await fetch(
-            `/api/groups/${groupId}/challenge-records`
-          );
-          if (response.ok && isMounted.current) {
-            const data = await response.json();
-            setRecords(groupId, data);
-            localRecords = data;
-            console.log(`${data.length}개의 챌린지 기록 새로 로드 (통계 뷰)`);
-          }
-        }
+    const completedDays = uniqueDates.size;
+    const totalDays = 30; // 일단 30일로 고정 (실제로는 챌린지 기간에 맞게 설정)
+    const progress = Math.min(
+      100,
+      Math.round((completedDays / totalDays) * 100)
+    );
 
-        // 레코드 데이터를 기반으로 통계 생성
-        if (localRecords.length > 0) {
-          // 각 챌린지별 통계 계산
-          const challengeStats = challenges?.map((challenge) => {
-            // 이 챌린지에 대한 기록 필터링
-            const challengeRecords = localRecords.filter(
-              (record) => record.challenge_id === challenge.id
-            );
-
-            // 완료된 날짜 수 (중복 날짜 제거)
-            const uniqueDates = new Set(
-              challengeRecords.map(
-                (record) =>
-                  new Date(record.created_at).toISOString().split("T")[0]
-              )
-            );
-
-            const completedDays = uniqueDates.size;
-            const totalDays = 30; // 일단 30일로 고정 (실제로는 챌린지 기간에 맞게 설정)
-            const progress = Math.min(
-              100,
-              Math.round((completedDays / totalDays) * 100)
-            );
-
-            return {
-              challengeId: challenge.id,
-              challengeName: challenge.title,
-              progress,
-              totalPosts: challengeRecords.length,
-              totalDays,
-              completedDays,
-            };
-          });
-
-          if (isMounted.current) {
-            setStats(challengeStats!);
-          }
-        } else {
-          // API가 구현되지 않은 경우 더미 데이터 생성
-          const dummyStats = challenges?.map((challenge) => {
-            const progress = Math.floor(Math.random() * 100);
-            const totalDays = 30;
-            const completedDays = Math.floor(totalDays * (progress / 100));
-
-            return {
-              challengeId: challenge.id,
-              challengeName: challenge.title,
-              progress,
-              totalPosts: Math.floor(Math.random() * 50) + 1,
-              totalDays,
-              completedDays,
-            };
-          });
-
-          if (isMounted.current) {
-            setStats(dummyStats!);
-          }
-        }
-      } catch (error) {
-        console.error("통계 데이터를 불러오는 중 오류가 발생했습니다:", error);
-        if (isMounted.current) {
-          setStats([]);
-        }
-      } finally {
-        if (isMounted.current) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    fetchStats();
-
-    // 클린업 함수
-    return () => {
-      isMounted.current = false;
+    return {
+      challengeId: challenge.id,
+      challengeName: challenge.title,
+      progress,
+      totalPosts: challengeRecords.length,
+      totalDays,
+      completedDays,
     };
-  }, [groupId, areRecordsCached, setRecords, getRecords, challenges]);
+  });
+
+  // if (isMounted.current) {
+  // setStats(challengeStats!);
+  // }
 
   // 차트 데이터 준비 (메모이제이션)
   const chartData = useMemo(
@@ -207,12 +124,11 @@ export function GroupStatsView({ groupId }: IGroupStatsViewProps) {
         <CardDescription>모임 내 챌린지 달성 통계를 확인하세요</CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isPending || isChallengeLoading ? (
           <div className="flex justify-center items-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : // ) : challenges.length > 0 ? (
-        challenges?.length ?? 0 > 0 ? (
+        ) : challengeLength > 0 ? (
           <div className="space-y-6">
             <div className="space-y-2">
               <h3 className="text-lg font-medium">모임 평균 달성률</h3>
