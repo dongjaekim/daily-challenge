@@ -8,7 +8,6 @@ import {
 } from "@/lib/queries/challengeQuery";
 import {
   groupMemberQueryKeys,
-  getGroupMembers,
   getGroupMember,
 } from "@/lib/queries/groupMemberQuery";
 import { getPosts, postQueryKeys } from "@/lib/queries/postQuery";
@@ -57,8 +56,8 @@ export default async function GroupPage({
   });
 
   queryClient.prefetchQuery({
-    queryKey: postQueryKeys.getAll(params.groupId),
-    queryFn: () => getPosts(params.groupId),
+    queryKey: postQueryKeys.getAll(params.groupId, 1, 5),
+    queryFn: () => getPosts(params.groupId, 1, 5),
   });
 
   queryClient.prefetchQuery({

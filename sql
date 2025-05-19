@@ -55,7 +55,6 @@ create table challenge_progress (
 -- posts 테이블
 create table posts (
   id uuid primary key default uuid_generate_v4(),
-  challenge_id uuid references challenges(id) on delete cascade,
   user_id uuid references users(id) on delete cascade,
   group_id uuid references groups(id) on delete cascade,
   content text not null,
@@ -66,6 +65,15 @@ create table posts (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- post_challenges 테이블
+create table post_challenges (
+  post_id uuid references posts(id) on delete cascade,
+  challenge_id uuid references challenges(id) on delete cascade,
+  primary key (post_id, challenge_id)
+);
+create index idx_post_challenges_post on post_challenges(post_id);
+create index idx_post_challenges_challenge on post_challenges(challenge_id);
 
 -- post_likes 테이블
 create table post_likes (
@@ -167,10 +175,8 @@ alter table posts enable row level security;
 create policy "Group members can view posts" on posts
   for select using (
     exists (
-      select 1 from challenges c
-      join group_members gm on gm.group_id = c.group_id
-      where c.id = posts.challenge_id
-      and gm.user_id = auth.uid()::uuid
+      select 1 from group_members gm 
+      where gm.user_id = auth.uid()::uuid
     )
   );
 create policy "Users can manage their own posts" on posts

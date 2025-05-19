@@ -11,13 +11,13 @@ export async function POST(
     const uuid = await getSupabaseUuid();
 
     if (!uuid) {
-      return new NextResponse("User not found", { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const body = await req.json();
-    const { content, challengeId, imageUrls } = body;
+    const { content, challengeIds, imageUrls } = body;
 
-    if (!content || !challengeId) {
+    if (!content || !challengeIds || challengeIds.length === 0) {
       return new NextResponse("content, and challengeId are required", {
         status: 400,
       });
@@ -28,19 +28,20 @@ export async function POST(
       group_id: params.groupId,
       user_id: uuid,
     });
-
-    if (!memberArr.length) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!memberArr) {
+      return new NextResponse("Not member of this group", { status: 404 });
     }
 
-    // 챌린지가 해당 그룹에 속하는지, 그리고 사용자가 참여한 챌린지인지 확인
-    const challengeArr = await supabaseDb.select("challenges", {
-      id: challengeId,
-      group_id: params.groupId,
-    });
+    // 챌린지들이 해당 그룹에 속하는지 확인 (본인이 등록한 챌린지인지는 제약 걸지 않음)
+    const { data: challenges } = await supabase
+      .from("challenges")
+      .select("*")
+      .eq("group_id", params.groupId)
+      .in("id", challengeIds);
 
-    if (!challengeArr.length) {
-      return new NextResponse("Challenge not found in this group", {
+    // 모든 챌린지가 존재하는지 확인 (배열 길이 비교)
+    if (challenges?.length !== challengeIds.length) {
+      return new NextResponse("Some challenges not found in this group", {
         status: 404,
       });
     }
@@ -60,16 +61,21 @@ export async function POST(
 
     const { data: existingPosts } = await supabase
       .from("posts")
-      .select("id")
+      .select(
+        `
+          id,
+          post_challenges!inner(challenge_id)
+        `
+      )
       .eq("user_id", uuid)
-      .eq("challenge_id", challengeId)
-      .eq("is_deleted", false) // 삭제되지 않은 게시글만 고려
+      .eq("is_deleted", false)
       .gte("created_at", startOfDay)
-      .lt("created_at", endOfDay);
+      .lt("created_at", endOfDay)
+      .in("post_challenges.challenge_id", challengeIds);
 
     if (existingPosts && existingPosts.length > 0) {
       return new NextResponse(
-        "이미 오늘 이 챌린지에 게시글을 작성했습니다. 하루에 챌린지당 1개의 게시글만 작성할 수 있습니다.",
+        "이미 오늘 게시글을 작성한 챌린지가 있습니다. 챌린지당 하루에 1개의 게시글만 작성할 수 있습니다.",
         { status: 400 }
       );
     }
@@ -80,7 +86,6 @@ export async function POST(
     // 게시글 생성
     const post = await supabaseDb.insert("posts", {
       content,
-      challenge_id: challengeId,
       user_id: uuid,
       group_id: params.groupId,
       image_urls: validImageUrls.length > 0 ? validImageUrls : [],
@@ -88,53 +93,27 @@ export async function POST(
       updated_at: new Date().toISOString(),
     });
 
-    // 챌린지 진행 상태 생성 또는 업데이트
     try {
-      const today_date = new Date().toISOString().split("T")[0];
-      const today_start = new Date(today_date).toISOString();
-      const today_end = new Date(
-        new Date(today_date).getTime() + 24 * 60 * 60 * 1000
-      ).toISOString();
+      for (const challengeId of challengeIds) {
+        await supabaseDb.insert("post_challenges", {
+          post_id: post.id,
+          challenge_id: challengeId,
+        });
+      }
+    } catch (postChallengesError) {
+      console.error("[POST_CHALLENGES_ERROR]", postChallengesError);
+      return new NextResponse("Internal error", { status: 500 });
+    }
 
-      try {
-        // 해당 날짜의 기존 progress 확인 (date 컬럼 대신 created_at 컬럼 사용)
-        const { data: existingProgress, error } = await supabase
-          .from("challenge_progress")
-          .select("*")
-          .eq("challenge_id", challengeId)
-          .eq("user_id", uuid)
-          .gte("created_at", today_start)
-          .lt("created_at", today_end)
-          .maybeSingle();
-
-        if (existingProgress) {
-          // 이미 오늘 데이터가 있으면 업데이트
-          await supabaseDb.update(
-            "challenge_progress",
-            {
-              progress: 1.0,
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: existingProgress.id,
-            }
-          );
-        } else if (!error) {
-          // 신규 생성 (created_at 컬럼만 사용)
-          try {
-            await supabaseDb.insert("challenge_progress", {
-              challenge_id: challengeId,
-              user_id: uuid,
-              progress: 1.0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
-          } catch (insertError) {
-            console.error("챌린지 진행도 기록 생성 실패:", insertError);
-          }
-        }
-      } catch (progressQueryError) {
-        console.error("챌린지 진행도 조회 실패:", progressQueryError);
+    try {
+      for (const challengeId of challengeIds) {
+        await supabaseDb.insert("challenge_progress", {
+          challenge_id: challengeId,
+          user_id: uuid,
+          progress: 1.0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
     } catch (progressError) {
       console.error("[CHALLENGE_PROGRESS_ERROR]", progressError);
@@ -156,7 +135,7 @@ export async function GET(
     const uuid = await getSupabaseUuid();
 
     if (!uuid) {
-      return new NextResponse("User not found", { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // 그룹 멤버인지 확인
@@ -164,13 +143,14 @@ export async function GET(
       group_id: params.groupId,
       user_id: uuid,
     });
-
-    if (!memberArr.length) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!memberArr) {
+      return new NextResponse("Not member of this group", { status: 404 });
     }
 
     // URL에서 쿼리 파라미터 추출
     const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get("page") || "1");
+    const pageSize = parseInt(url.searchParams.get("pageSize") || "5");
     const challengeId = url.searchParams.get("challengeId");
 
     // 그룹의 게시글 조회 (챌린지 ID로 필터링 가능)
@@ -183,29 +163,27 @@ export async function GET(
         users:user_id (
           id, name, email, avatar_url
         ),
-        challenges:challenge_id (
-          id, title
+        post_challenges${challengeId ? "!inner" : ""} (
+          challenges:challenge_id (
+            id, title
+          )
         )
-      `
+      `,
+        { count: "exact" } // 총 개수 가져오기
       )
       .eq("group_id", params.groupId)
-      .eq("is_deleted", false); // 삭제되지 않은 게시글만 조회
+      .eq("is_deleted", false) // 삭제되지 않은 게시글만 조회
+      .order("created_at", { ascending: false })
+      .range((page - 1) * pageSize, page * pageSize - 1); // 페이지네이션 적용
 
     if (challengeId) {
-      query = query.eq("challenge_id", challengeId);
+      query = query.eq("post_challenges.challenge_id", challengeId);
     }
 
-    const { data, error } = await query.order("created_at", {
-      ascending: false,
-    });
-
-    if (error) {
-      console.error("[POSTS_GET] DB Error:", error);
-      return new NextResponse("Database error", { status: 500 });
-    }
+    const { data, count } = await query;
 
     // 각 게시글에 좋아요 수와 댓글 수 추가
-    const postsWithStats = await Promise.all(
+    const postsWithIsLiked = await Promise.all(
       (data || []).map(async (post) => {
         try {
           const { data: userLike } = await supabase
@@ -217,25 +195,25 @@ export async function GET(
 
           const userLiked = !!userLike;
 
-          // author 필드에 avatar_url 추가 (없는 경우 기본 이미지)
           const author = post.users
             ? {
                 id: post.users.id,
                 name: post.users.name,
-                avatar_url:
-                  post.users.avatar_url ||
-                  `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-                    post.users.name || "User"
-                  )}`,
+                avatar_url: post.users.avatar_url,
               }
             : null;
+
+          const challengeArr =
+            post.post_challenges?.map((pc: any) => ({
+              id: pc.challenges?.id,
+              title: pc.challenges?.title,
+            })) ?? [];
 
           // 명확한 응답 구조 반환
           return {
             id: post.id,
             content: post.content,
             created_at: post.created_at,
-            challenge_id: post.challenge_id,
             user_id: post.user_id,
             group_id: post.group_id,
             image_urls: post.image_urls || [],
@@ -245,11 +223,11 @@ export async function GET(
             isLiked: userLiked,
             isAuthor: post.user_id === uuid,
             author,
-            challenge: post.challenges,
+            challenges: challengeArr,
           };
         } catch (statsError) {
           console.error("[POST_STATS_ERROR]", statsError, post.id);
-          // 통계 조회 실패해도 게시글 기본 정보는 반환
+          // 좋아요 여부 조회 실패해도 게시글 기본 정보는 반환
           return {
             ...post,
             likeCount: 0,
@@ -257,14 +235,14 @@ export async function GET(
             isLiked: false,
             isAuthor: post.user_id === uuid,
             author: post.users,
-            challenge: post.challenges,
+            challenges: [],
             imageUrls: post.image_urls || [],
           };
         }
       })
     );
 
-    return NextResponse.json(postsWithStats);
+    return NextResponse.json({ data: postsWithIsLiked, total: count || 0 });
   } catch (error) {
     console.log("[POSTS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

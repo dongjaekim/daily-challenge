@@ -54,11 +54,10 @@ export interface IPost {
   updated_at: string;
   user_id: string;
   group_id: string;
-  challenge_id: string;
   likeCount: number;
   commentCount: number;
   author?: IUser;
-  challenge?: IChallenge;
+  challenges?: IChallenge[];
   likes?: IPostLike[];
   comments?: IPostComment[];
   isLiked?: boolean;

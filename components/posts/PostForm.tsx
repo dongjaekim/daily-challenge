@@ -2,17 +2,10 @@
 
 import { useState, ChangeEvent, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { MultiSelect } from "react-multi-select-component";
 import { Label } from "@/components/ui/label";
 import { Loader2, Upload, X, ArrowLeft, Link, Plus } from "lucide-react";
 import Image from "next/image";
@@ -43,7 +36,7 @@ interface IPostFormProps {
 
 export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
   const [content, setContent] = useState("");
-  const [challengeId, setChallengeId] = useState("");
+  const [challengeIds, setChallengeIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<IImage[]>([]);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
@@ -68,7 +61,9 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
       const cachedPost = getPost(groupId, postId);
       if (cachedPost) {
         setPost(cachedPost);
-        setChallengeId(cachedPost.challenge_id);
+        setChallengeIds(
+          (cachedPost.challenges ?? []).map((challenges) => challenges.id)
+        );
         setContent(cachedPost.content);
         if (cachedPost.image_urls && cachedPost.image_urls.length > 0) {
           const initialImages = cachedPost.image_urls.map(
@@ -167,7 +162,7 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
           setIsLoading(false);
         }
       } else {
-        if (!content.trim() || !challengeId) {
+        if (!content.trim() || !challengeIds || challengeIds.length === 0) {
           toast({
             title: "입력 오류",
             description: "내용, 챌린지를 모두 입력해주세요.",
@@ -196,7 +191,7 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
             },
             body: JSON.stringify({
               content,
-              challengeId,
+              challengeIds,
               imageUrls: images.map((img) => img.url),
             }),
           });
@@ -204,14 +199,19 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
           if (!response.ok) {
             const errorText = await response.text();
             if (
-              errorText.includes("이미 오늘 이 챌린지에 게시글을 작성했습니다")
+              errorText.includes("이미 오늘 게시글을 작성한 챌린지가 있습니다")
             ) {
-              // 현재 선택된 챌린지 정보 가져오기
-              const selectedChallenge =
-                challenges?.find((c) => c.id === challengeId) || null;
-              setCurrentChallenge(selectedChallenge);
+              // 여러 챌린지 중 이미 작성한 챌린지명을 모두 표시
+              const alreadyPostedChallenges = challenges
+                ?.filter((c) => challengeIds.includes(c.id))
+                .map((c) => c.title)
+                .join(", ");
+
               setLimitDialogMessage(
-                "하루에 챌린지당 1개의 게시글만 작성할 수 있습니다.\n다른 챌린지를 선택하거나 내일 다시 시도해 주세요.\n\n(이미 작성한 게시글을 삭제한 경우 다시 작성할 수 있습니다)"
+                `하루에 챌린지당 1개의 게시글만 작성할 수 있습니다.\n
+                선택한 챌린지: ${alreadyPostedChallenges}\n
+                다른 챌린지를 선택하거나 내일 다시 시도해 주세요.\n\n
+                (이미 작성한 게시글을 삭제한 경우 다시 작성할 수 있습니다)`
               );
               setShowLimitDialog(true);
               throw new Error(
@@ -225,28 +225,24 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
           const data = await response.json();
           console.log(data);
           // 스토어에 새 게시글 추가
-          const selectedChallenge = challenges?.find(
-            (c) => c.id === challengeId
+          const selectedChallenges = challenges?.filter((c) =>
+            challengeIds.includes(c.id)
           );
           const currentDate = new Date().toISOString();
 
           // 게시글 데이터 구성
           const newPost = {
             id: data.id,
-            title: selectedChallenge?.title,
             content,
             image_urls: images.map((img) => img.url),
             created_at: currentDate,
             updated_at: currentDate,
             user_id: data.user_id,
             group_id: groupId,
-            challenge_id: challengeId,
-            challenge: selectedChallenge
-              ? {
-                  id: selectedChallenge.id,
-                  title: selectedChallenge.title,
-                }
-              : undefined,
+            challenges: selectedChallenges?.map((c) => ({
+              id: c.id,
+              title: c.title,
+            })),
             likeCount: 0,
             commentCount: 0,
             isLiked: false,
@@ -277,7 +273,7 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
         }
       }
     },
-    [postId, content, challengeId, images]
+    [postId, content, challengeIds, images]
   );
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -440,43 +436,44 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
                 {postId ? "챌린지" : "챌린지 선택"}
               </Label>
               {postId ? (
-                <Select
-                  value={challengeId}
-                  disabled={true} // 수정 시 챌린지 변경 불가
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="참여한 챌린지" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {challenges?.map((challenge) => (
-                      <SelectItem key={challenge.id} value={challenge.id}>
-                        {challenge.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div>
+                  {challenges?.map((c) => (
+                    <span
+                      key={c.id}
+                      className="inline-block bg-muted px-2 py-1 rounded mr-2"
+                    >
+                      {c.title}
+                    </span>
+                  ))}
+                  <p className="text-xs text-muted-foreground">
+                    게시글 수정 시 챌린지는 변경할 수 없습니다.
+                  </p>
+                </div>
               ) : (
-                <Select
-                  value={challengeId}
-                  onValueChange={setChallengeId}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="참여할 챌린지를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {challenges?.map((challenge) => (
-                      <SelectItem key={challenge.id} value={challenge.id}>
-                        {challenge.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {postId && (
-                <p className="text-xs text-muted-foreground">
-                  게시글 수정 시 챌린지는 변경할 수 없습니다.
-                </p>
+                <MultiSelect
+                  options={(challenges ?? []).map((challenge) => ({
+                    label: challenge.title,
+                    value: challenge.id,
+                  }))}
+                  value={(challenges ?? [])
+                    .filter((challenge) => challengeIds.includes(challenge.id))
+                    .map((challenge) => ({
+                      label: challenge.title,
+                      value: challenge.id,
+                    }))}
+                  onChange={(selected: { label: string; value: string }[]) =>
+                    setChallengeIds(selected.map((item) => item.value))
+                  }
+                  labelledBy="참여할 챌린지 선택"
+                  disableSearch={true}
+                  isLoading={isLoading}
+                  className="w-full"
+                  hasSelectAll={false}
+                  overrideStrings={{
+                    selectSomeItems: "참여할 챌린지 선택",
+                    allItemsAreSelected: "모든 챌린지 선택됨",
+                  }}
+                />
               )}
             </div>
           </section>
