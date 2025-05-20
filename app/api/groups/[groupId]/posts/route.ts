@@ -149,8 +149,10 @@ export async function GET(
 
     // URL에서 쿼리 파라미터 추출
     const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get("page") || "1");
-    const pageSize = parseInt(url.searchParams.get("pageSize") || "5");
+    const pageParam = url.searchParams.get("page");
+    const pageSizeParam = url.searchParams.get("pageSize");
+    const page = pageParam ? parseInt(pageParam) : undefined;
+    const pageSize = pageSizeParam ? parseInt(pageSizeParam) : undefined;
     const challengeId = url.searchParams.get("challengeId");
 
     // 그룹의 게시글 조회 (챌린지 ID로 필터링 가능)
@@ -173,8 +175,12 @@ export async function GET(
       )
       .eq("group_id", params.groupId)
       .eq("is_deleted", false) // 삭제되지 않은 게시글만 조회
-      .order("created_at", { ascending: false })
-      .range((page - 1) * pageSize, page * pageSize - 1); // 페이지네이션 적용
+      .order("created_at", { ascending: false });
+
+    // 페이지네이션이 명시된 경우에만 range 적용
+    if (page !== undefined && pageSize !== undefined) {
+      query = query.range((page - 1) * pageSize, page * pageSize - 1);
+    }
 
     if (challengeId) {
       query = query.eq("post_challenges.challenge_id", challengeId);

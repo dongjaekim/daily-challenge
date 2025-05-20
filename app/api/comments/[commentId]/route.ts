@@ -1,4 +1,3 @@
-import { supabaseDb } from "@/db";
 import { NextResponse } from "next/server";
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +10,7 @@ export async function DELETE(
     const uuid = await getSupabaseUuid();
 
     if (!uuid) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // 게시글 조회
