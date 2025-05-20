@@ -168,7 +168,7 @@ export function GroupPostsView({ groupId }: GroupPostsViewProps) {
           <div className="flex flex-row items-center gap-3">
             <img
               src={post.author?.avatar_url || "/default-profile.png"}
-              alt={post.author!.name}
+              alt={post.author?.name}
               className="w-8 sm:w-10 h-8 sm:h-10 rounded-full object-cover"
             />
             <div className="flex-1 ">
