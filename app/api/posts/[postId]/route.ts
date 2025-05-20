@@ -16,7 +16,19 @@ export async function GET(
     // 게시글 조회
     const { data: post, error } = await supabase
       .from("posts")
-      .select("*")
+      .select(
+        `
+      *,
+      users:user_id (
+        id, name, email, avatar_url
+      ),
+      post_challenges (
+        challenges:challenge_id (
+          id, title
+        )
+      )
+    `
+      )
       .eq("id", params.postId)
       .single();
 
@@ -25,7 +37,57 @@ export async function GET(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    return NextResponse.json(post);
+    try {
+      const { data: userLike } = await supabase
+        .from("post_likes")
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("user_id", uuid)
+        .maybeSingle();
+
+      const userLiked = !!userLike;
+
+      const author = post.users ? post.users : null;
+
+      const challengeArr =
+        post.post_challenges?.map((pc: any) => ({
+          id: pc.challenges?.id,
+          title: pc.challenges?.title,
+        })) ?? [];
+
+      // 명확한 응답 구조 반환
+      const postsWithIsLiked = {
+        id: post.id,
+        content: post.content,
+        created_at: post.created_at,
+        user_id: post.user_id,
+        group_id: post.group_id,
+        image_urls: post.image_urls || [],
+        is_deleted: post.is_deleted,
+        likeCount: post.like_count,
+        commentCount: post.comment_count,
+        isLiked: userLiked,
+        isAuthor: post.user_id === uuid,
+        author,
+        challenges: challengeArr,
+      };
+
+      return NextResponse.json(postsWithIsLiked);
+    } catch (statsError) {
+      console.error("[POST_STATS_ERROR]", statsError, post.id);
+      // 좋아요 여부 조회 실패해도 게시글 기본 정보는 반환
+      const postsWithIsLiked = {
+        ...post,
+        likeCount: 0,
+        commentCount: 0,
+        isLiked: false,
+        isAuthor: post.user_id === uuid,
+        author: post.users,
+        challenges: [],
+        imageUrls: post.image_urls || [],
+      };
+      return NextResponse.json(postsWithIsLiked);
+    }
   } catch (error) {
     console.error("[POST_GET_ERROR]", error);
     return NextResponse.json(
