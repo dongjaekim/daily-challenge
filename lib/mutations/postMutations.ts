@@ -13,10 +13,16 @@ export const useCreatePost = (groupId: string) => {
       }).then((res) => res.json()),
     onSuccess: (newPost) => {
       // 캐시 즉시 업데이트 (낙관적 업데이트)
-      queryClient.setQueryData(
-        postQueryKeys.all(groupId),
-        (old: IPost[] = []) => [newPost, ...old]
-      );
+      // queryClient.setQueryData(
+      //   postQueryKeys.getAll(groupId),
+      //   (old: IPost[] = []) => [newPost, ...old]
+      // );
+
+      // posts 관련 캐시 무효화
+      queryClient.invalidateQueries({
+        queryKey: postQueryKeys.getAll(groupId),
+        exact: false,
+      });
     },
   });
 };
@@ -30,10 +36,16 @@ export const useDeletePost = (groupId: string) => {
         method: "DELETE",
       }),
     onSuccess: (_, postId) => {
-      queryClient.setQueryData(
-        postQueryKeys.all(groupId),
-        (old: IPost[] = []) => old.filter((post) => post.id !== postId)
-      );
+      // queryClient.setQueryData(
+      //   postQueryKeys.getAll(groupId),
+      //   (old: IPost[] = []) => old.filter((post) => post.id !== postId)
+      // );
+
+      // posts 관련 캐시 무효화
+      queryClient.invalidateQueries({
+        queryKey: postQueryKeys.getAll(groupId),
+        exact: false,
+      });
     },
   });
 };
@@ -49,15 +61,15 @@ export const useToggleLike = (groupId: string, postId: string) => {
     onMutate: async (isLiked) => {
       // 낙관적 업데이트
       await queryClient.cancelQueries({
-        queryKey: postQueryKeys.all(groupId),
+        queryKey: postQueryKeys.getAll(groupId),
       });
 
       const previousPosts = queryClient.getQueryData<IPost[]>(
-        postQueryKeys.all(groupId)
+        postQueryKeys.getAll(groupId)
       );
 
       queryClient.setQueryData(
-        postQueryKeys.all(groupId),
+        postQueryKeys.getAll(groupId),
         (old: IPost[] = []) =>
           old.map((post) =>
             post.id === postId
@@ -77,7 +89,7 @@ export const useToggleLike = (groupId: string, postId: string) => {
     onError: (err, variables, context) => {
       // 에러 발생 시 롤백
       queryClient.setQueryData(
-        postQueryKeys.all(groupId),
+        postQueryKeys.getAll(groupId),
         context?.previousPosts
       );
     },
