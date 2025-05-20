@@ -147,7 +147,7 @@ export function PostDetail({
 
   return (
     <>
-      <div className="flex justify-between bg-white rounded-lg p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between bg-white rounded-lg p-4 md:p-6">
         <div>
           <Button
             variant="ghost"
