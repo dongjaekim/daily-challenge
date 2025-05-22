@@ -18,8 +18,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { usePostsStore } from "@/store/posts";
 import { IChallenge, IPost } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { getPost, postQueryKeys } from "@/lib/queries/postQuery";
 
 interface IImage {
   url: string;
@@ -44,50 +45,36 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
   const [currentChallenge, setCurrentChallenge] = useState<IChallenge | null>(
     null
   );
-  const [post, setPost] = useState<IPost | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
   const router = useRouter();
 
-  // 게시글 스토어 접근
-  const addPost = usePostsStore((state) => state.addPost);
-  const updatePost = usePostsStore((state) => state.updatePost);
-  const getPost = usePostsStore((state) => state.getPost);
+  const { data: post } = useQuery({
+    queryKey: postQueryKeys.getOne(postId || ""),
+    queryFn: () => getPost(postId || ""),
+    enabled: !!postId,
+  });
 
   useEffect(() => {
-    const cachedPost = () => {
-      if (!postId) return;
-      const cachedPost = getPost(groupId, postId);
-      if (cachedPost) {
-        setPost(cachedPost);
-        setChallengeIds(
-          (cachedPost.challenges ?? []).map((challenges) => challenges.id)
+    if (!postId) return;
+    if (post) {
+      setChallengeIds(
+        (post.challenges ?? []).map((challenges) => challenges.id)
+      );
+      setContent(post.content);
+      if (post.image_urls && post.image_urls.length > 0) {
+        const initialImages = post.image_urls.map(
+          (url: string, index: number) => ({
+            url,
+            uploading: false,
+            index,
+          })
         );
-        setContent(cachedPost.content);
-        if (cachedPost.image_urls && cachedPost.image_urls.length > 0) {
-          const initialImages = cachedPost.image_urls.map(
-            (url: string, index: number) => ({
-              url,
-              uploading: false,
-              index,
-            })
-          );
-          setImages(initialImages);
-        }
+        setImages(initialImages);
       }
-    };
-
-    cachedPost();
+    }
   }, [postId, groupId, getPost]);
-
-  useEffect(() => {
-    const interval = setInterval(
-      () => usePostsStore.getState().autoCleanUp(),
-      5 * 60 * 1000 // 5분 주기
-    );
-    return () => clearInterval(interval);
-  }, []);
 
   const onSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -139,7 +126,7 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
           const updatedPost = await response.json();
 
           // 스토어 업데이트
-          updatePost(groupId, postId, updatedPost.post);
+          // updatePost(groupId, postId, updatedPost.post);
 
           toast({
             title: "게시글이 수정되었습니다",
@@ -250,7 +237,7 @@ export function PostForm({ groupId, postId, challenges }: IPostFormProps) {
           };
 
           // 스토어에 추가
-          addPost(groupId, newPost as IPost);
+          // addPost(groupId, newPost as IPost);
 
           toast({
             title: "성공",

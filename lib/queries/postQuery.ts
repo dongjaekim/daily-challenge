@@ -23,7 +23,7 @@ export const getPosts = async (
   page?: number,
   pageSize?: number,
   challengeId?: string
-): Promise<{ data: IPost[]; total: number }> => {
+): Promise<{ data: IPost[]; total: number; nextPage?: number | null }> => {
   const params = new URLSearchParams({
     ...(page !== undefined && { page: page.toString() }),
     ...(pageSize !== undefined && { pageSize: pageSize.toString() }),

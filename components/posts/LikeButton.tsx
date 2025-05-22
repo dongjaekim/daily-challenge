@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePostsStore } from "@/store/posts";
 
 interface LikeButtonProps {
   postId: string;
@@ -20,6 +19,7 @@ interface LikeButtonProps {
     | "link";
   onLikeToggle?: (isLiked: boolean) => void;
   groupId?: string; // 그룹 ID (스토어 업데이트용)
+  className?: string;
 }
 
 export function LikeButton({
@@ -30,14 +30,12 @@ export function LikeButton({
   variant = "outline",
   onLikeToggle,
   groupId,
+  className,
 }: LikeButtonProps) {
   const [liked, setLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  // 게시글 스토어 접근
-  const toggleLike = usePostsStore((state) => state.toggleLike);
 
   useEffect(() => {
     let isMounted = true;
@@ -89,11 +87,6 @@ export function LikeButton({
         setLiked(isLiked);
         setLikeCount((prev) => (isLiked ? prev + 1 : prev - 1));
 
-        // 스토어 업데이트 (그룹 ID가 있는 경우)
-        if (groupId) {
-          toggleLike(groupId, postId, isLiked);
-        }
-
         // 콜백 호출
         if (onLikeToggle) {
           onLikeToggle(isLiked);
@@ -120,7 +113,7 @@ export function LikeButton({
       disabled={isLoading}
       className={`gap-2 ${
         liked ? "bg-rose-500 hover:bg-rose-600 text-white" : ""
-      }`}
+      } ${className}`}
     >
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />

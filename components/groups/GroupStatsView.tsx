@@ -119,10 +119,7 @@ export function GroupStatsView({ groupId }: IGroupStatsViewProps) {
 
   return (
     <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>통계 뷰</CardTitle>
-        <CardDescription>모임 내 챌린지 달성 통계를 확인하세요</CardDescription>
-      </CardHeader>
+      <CardHeader></CardHeader>
       <CardContent>
         {isPending || isChallengeLoading ? (
           <div className="flex justify-center items-center py-16">

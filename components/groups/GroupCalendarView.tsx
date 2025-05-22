@@ -206,13 +206,7 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 pb-6">
-        <div>
-          <CardTitle className="h-6">달력 뷰</CardTitle>
-          <CardDescription>
-            모임 구성원들의 챌린지 참여 현황을 확인하세요
-          </CardDescription>
-        </div>
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:justify-between gap-4 pb-6">
         <div className="flex items-center space-x-2 mx-auto sm:mx-0">
           <Button variant="outline" size="icon" onClick={prevMonth}>
             <ChevronLeft className="h-4 w-4" />
@@ -223,6 +217,20 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
           <Button variant="outline" size="icon" onClick={nextMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
+
+        {/* 범례 추가 */}
+        <div className="flex flex-wrap gap-2 sm:gap-4">
+          {getUniqueUsers().map((user) => (
+            <div key={user.id} className="flex items-center gap-1 sm:gap-2">
+              <div
+                className={`w-1 h-1 sm:w-2 sm:h-2 rounded-full ${getUserColor(
+                  user.id
+                )}`}
+              />
+              <span className="text-sm">{user.name}</span>
+            </div>
+          ))}
         </div>
       </CardHeader>
       <CardContent className="flex flex-col h-auto">
@@ -313,22 +321,6 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
               </div>
             </>
           )}
-        </div>
-
-        {/* 범례 추가 */}
-        <div className="mt-4">
-          <div className="flex flex-wrap gap-2 sm:gap-4">
-            {getUniqueUsers().map((user) => (
-              <div key={user.id} className="flex items-center gap-1 sm:gap-2">
-                <div
-                  className={`w-1 h-1 sm:w-2 sm:h-2 rounded-full ${getUserColor(
-                    user.id
-                  )}`}
-                />
-                <span className="text-sm">{user.name}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
         {challenges?.length === 0 && (

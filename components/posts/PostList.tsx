@@ -25,8 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useChallengeRecordsStore } from "@/store/challenge-records";
-import { useChallengesStore } from "@/store/challenges";
 import { IPost } from "@/types";
 
 interface IPostListProps {
@@ -51,22 +49,6 @@ export function PostList({
   >({});
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
-
-  // 챌린지 레코드 스토어 접근
-  const invalidateRecordsCache = useChallengeRecordsStore(
-    (state) => state.invalidateCache
-  );
-  const updateRecordsCacheTimestamp = useChallengeRecordsStore(
-    (state) => state.updateCacheTimestamp
-  );
-
-  // 챌린지 스토어 접근
-  const invalidateChallengesCache = useChallengesStore(
-    (state) => state.invalidateCache
-  );
-  const updateChallengesCacheTimestamp = useChallengesStore(
-    (state) => state.updateCacheTimestamp
-  );
 
   // 디버깅용 로그
   useEffect(() => {
@@ -110,8 +92,8 @@ export function PostList({
 
       // 캐시 타임스탬프 업데이트 (그룹 ID가 있는 경우)
       if (deletedPost && deletedPost.group_id) {
-        updateRecordsCacheTimestamp(deletedPost.group_id);
-        updateChallengesCacheTimestamp(deletedPost.group_id);
+        // updateRecordsCacheTimestamp(deletedPost.group_id);
+        // updateChallengesCacheTimestamp(deletedPost.group_id);
       }
 
       if (onDelete) {

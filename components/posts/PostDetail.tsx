@@ -21,7 +21,7 @@ import { ArrowLeft, Edit, Loader2, MessageSquare, Trash } from "lucide-react";
 import Link from "next/link";
 import { getPost, postQueryKeys } from "@/lib/queries/postQuery";
 import { getComments, commentQueryKeys } from "@/lib/queries/commentQuery";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeletePost } from "@/lib/mutations/postMutations";
 import {
   useCreateComment,

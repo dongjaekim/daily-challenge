@@ -248,7 +248,16 @@ export async function GET(
       })
     );
 
-    return NextResponse.json({ data: postsWithIsLiked, total: count || 0 });
+    return NextResponse.json({
+      data: postsWithIsLiked,
+      total: count || 0,
+      nextPage:
+        page && pageSize
+          ? (page + 1) * (pageSize || 5) > (count || 0)
+            ? undefined
+            : page + 1
+          : undefined,
+    });
   } catch (error) {
     console.log("[POSTS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

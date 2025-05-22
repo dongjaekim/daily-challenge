@@ -19,6 +19,13 @@ export async function GET(
       user_id: params.memberId,
     });
 
+    if (!memberArr[0]) {
+      return NextResponse.json(
+        { error: "멤버를 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(memberArr[0]);
   } catch (error) {
     console.error("[MEMBER_GET]", error);
