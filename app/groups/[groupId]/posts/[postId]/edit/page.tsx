@@ -1,5 +1,10 @@
-import { supabaseDb } from "@/db";
 import { getSupabaseUuid } from "@/utils/server-auth";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import {
+  challengeQueryKeys,
+  getChallenges,
+} from "@/lib/queries/challengeQuery";
+import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 import { notFound } from "next/navigation";
 import { PostForm } from "@/components/posts/PostForm";
 
@@ -18,28 +23,18 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
     return notFound();
   }
 
-  // 그룹 멤버 여부 확인
-  const memberArr = await supabaseDb.select("group_members", {
-    group_id: params.groupId,
-    user_id: uuid,
-  });
+  const queryClient = makeQueryClient();
 
-  if (!memberArr.length) {
-    return notFound();
-  }
-
-  const challenges = await supabaseDb.select("challenges", {
-    group_id: params.groupId,
-    created_by: uuid,
+  queryClient.prefetchQuery({
+    queryKey: challengeQueryKeys.getAll(params.groupId),
+    queryFn: () => getChallenges(params.groupId),
   });
 
   return (
-    <div className="space-y-8">
-      <PostForm
-        postId={params.postId}
-        groupId={params.groupId}
-        challenges={challenges}
-      />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div>
+        <PostForm postId={params.postId} groupId={params.groupId} />
+      </div>
+    </HydrationBoundary>
   );
 }
