@@ -1,28 +1,52 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { postQueryKeys } from "../queries/postQuery";
-import { IPost } from "@/types";
+import { IGroup, IPost } from "@/types";
 
 // 게시글 생성
 export const useCreatePost = (groupId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (newPost: Omit<IPost, "id">) =>
+    mutationFn: (newPost: {
+      content: string;
+      challengeIds: string[];
+      imageUrls: string[];
+    }) =>
       fetch(`/api/groups/${groupId}/posts`, {
         method: "POST",
         body: JSON.stringify(newPost),
-      }).then((res) => res.json()),
-    onSuccess: (newPost) => {
-      // 캐시 즉시 업데이트 (낙관적 업데이트)
-      // queryClient.setQueryData(
-      //   postQueryKeys.getAll(groupId),
-      //   (old: IPost[] = []) => [newPost, ...old]
-      // );
-
+      }).then((res) => {
+        if (!res.ok) throw new Error("게시글 작성에 실패했습니다.");
+        return res.json();
+      }),
+    onSuccess: () => {
       // posts 관련 캐시 무효화
       queryClient.invalidateQueries({
         queryKey: postQueryKeys.getAll(groupId),
         exact: false,
       });
+    },
+  });
+};
+
+// 게시글 수정
+export const useUpdatePost = (groupId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (updatedPost: Partial<IPost>) =>
+      fetch(`/api/posts/${updatedPost.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(updatedPost),
+      }).then((res) => {
+        if (!res.ok) throw new Error("게시글 수정에 실패했습니다.");
+        return res.json();
+      }),
+    onSuccess: (updatedPost) => {
+      // posts 관련 캐시 무효화
+      queryClient.setQueryData(
+        postQueryKeys.getAll(groupId),
+        (old: IPost[] = []) =>
+          old.map((post) => (post.id === updatedPost.id ? updatedPost : post))
+      );
     },
   });
 };

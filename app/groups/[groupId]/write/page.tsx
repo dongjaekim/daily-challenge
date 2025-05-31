@@ -1,7 +1,16 @@
 import { PostForm } from "@/components/posts/PostForm";
-import { supabaseDb } from "@/db";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import {
+  groupMemberQueryKeys,
+  getGroupMember,
+} from "@/lib/queries/groupMemberQuery";
+import {
+  challengeQueryKeys,
+  getChallenges,
+} from "@/lib/queries/challengeQuery";
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
+import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 
 interface IWritePageProps {
   params: {
@@ -17,34 +26,36 @@ export default async function WritePage({ params }: IWritePageProps) {
     return notFound();
   }
 
-  // 그룹 멤버 여부 확인
-  const memberArr = await supabaseDb.select("group_members", {
-    group_id: params.groupId,
-    user_id: uuid,
+  const queryClient = makeQueryClient();
+
+  // 1. 그룹 멤버 여부 확인 (이 데이터는 서버 로직에서 즉시 사용되므로 fetchQuery가 적절)
+  const isMember = await queryClient.fetchQuery({
+    queryFn: () => getGroupMember(params.groupId, uuid),
+    queryKey: groupMemberQueryKeys.getOne(params.groupId, uuid),
   });
 
-  if (!memberArr.length) {
+  if (!isMember) {
+    console.warn(
+      `User ${uuid} is not a member of group ${params.groupId}. Access denied.`
+    );
     return notFound();
   }
 
-  // 해당 그룹의 챌린지 목록 조회
-  const challenges = await supabaseDb.select("challenges", {
-    group_id: params.groupId,
-    created_by: uuid,
+  queryClient.prefetchQuery({
+    queryFn: () => getGroupMember(params.groupId, uuid),
+    queryKey: groupMemberQueryKeys.getOne(params.groupId, uuid),
+  });
+
+  queryClient.prefetchQuery({
+    queryKey: challengeQueryKeys.getAll(params.groupId),
+    queryFn: () => getChallenges(params.groupId),
   });
 
   return (
-    <div className="space-y-6">
-      {challenges.length === 0 ? (
-        <div className="p-6 text-center bg-muted rounded-md">
-          <p className="text-lg font-medium">아직 등록된 챌린지가 없습니다.</p>
-          <p className="text-muted-foreground mt-1">
-            게시글을 작성하기 전에 먼저 챌린지를 등록해주세요.
-          </p>
-        </div>
-      ) : (
-        <PostForm groupId={params.groupId} challenges={challenges} />
-      )}
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div>
+        <PostForm groupId={params.groupId} />
+      </div>
+    </HydrationBoundary>
   );
 }
