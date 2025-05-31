@@ -50,16 +50,6 @@ export function PostList({
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
-  // 디버깅용 로그
-  useEffect(() => {
-    console.log("PostList 컴포넌트 마운트, posts:", posts);
-    posts.forEach((post) => {
-      console.log(
-        `게시글 ID: ${post.id}, 제목: ${post.title}, 좋아요 수: ${post.likeCount}, 댓글 수: ${post.commentCount}`
-      );
-    });
-  }, [posts]);
-
   // 날짜 형식 변환 헬퍼 함수
   const formatDate = (dateString: string) => {
     try {
@@ -226,7 +216,6 @@ export function PostList({
             )}
           </div>
 
-          <h3 className="mt-3 text-lg font-medium">{post.title}</h3>
           <p className="mt-2 line-clamp-3 text-muted-foreground">
             {post.content}
           </p>

@@ -239,7 +239,7 @@ export function PostDetail({
 
         {post.image_urls && post.image_urls.length > 0 && (
           <div className="mt-4 md:mt-6">
-            <ImageGallery images={post.image_urls} postTitle={post.title} />
+            <ImageGallery images={post.image_urls} postTitle={postId} />
           </div>
         )}
 
