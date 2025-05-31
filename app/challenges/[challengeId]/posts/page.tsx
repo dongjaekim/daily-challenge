@@ -84,7 +84,7 @@ export default async function PostsPage({ params }: PostsPageProps) {
             <Button>새 게시글 작성</Button>
           </DialogTrigger>
           <DialogContent>
-            <PostForm groupId={challenge.group_id} challenges={[challenge]} />
+            <PostForm groupId={challenge.group_id} />
           </DialogContent>
         </Dialog>
       </div>
