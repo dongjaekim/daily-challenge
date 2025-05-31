@@ -13,13 +13,13 @@ function getDisplayTime(dateString: string) {
   const diffMs = now.getTime() - postDate.getTime();
   const diffSeconds = Math.round(diffMs / 1000);
   const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.round(diffMinutes / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours < 24) {
     // 하루 이내면 "n시간 전", "n분 전" 등 상대시간
     if (diffMinutes < 1) return "방금 전";
     if (diffMinutes < 60) return `${diffMinutes}분 전`;
-    return `${Math.floor(diffHours)}시간 전`;
+    return `${diffHours}시간 전`;
   } else if (now.getFullYear() === postDate.getFullYear()) {
     return format(postDate, "M월 d일 a h:mm", { locale: ko });
   } else {
@@ -69,16 +69,7 @@ export function PostItem({ post, groupId, onPostClick }: PostItemProps) {
         </div>
       </div>
 
-      {post.title && (
-        <h3
-          id={`post-title-${post.id}`}
-          className="font-semibold text-lg line-clamp-2 text-foreground"
-        >
-          {post.title}
-        </h3>
-      )}
-
-      <p className="text-sm md:text-base line-clamp-3 text-foreground/90 whitespace-pre-wrap">
+      <p className="text-sm md:text-base line-clamp-3 text-foreground/90 whitespace-pre-wrap break-words">
         {post.content}
       </p>
 
@@ -133,7 +124,7 @@ export function PostItem({ post, groupId, onPostClick }: PostItemProps) {
         </div>
       )}
 
-      <div className="flex items-center gap-3 sm:gap-4 text-muted-foreground pt-3 border-t mt-3">
+      <div className="flex items-center gap-3 sm:gap-4 text-muted-foreground pt-3 border-t">
         <LikeButton
           postId={post.id}
           initialLikeCount={post.likeCount || 0}

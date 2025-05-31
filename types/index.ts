@@ -47,7 +47,6 @@ export interface IChallengeRecord {
 // 게시글 정보
 export interface IPost {
   id: string;
-  title: string;
   content: string;
   image_urls: string[] | null; // 여러 이미지 URL
   created_at: string;
