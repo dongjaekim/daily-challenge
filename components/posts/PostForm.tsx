@@ -455,7 +455,7 @@ export function PostForm({ groupId, postId }: IPostFormProps) {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 sm:py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
         <form onSubmit={onSubmit} className="max-w-2xl mx-auto space-y-6">
           {/* 챌린지 선택 섹션 */}
           <Card>

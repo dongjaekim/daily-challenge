@@ -29,14 +29,12 @@ export default async function PostPage({ params }: IPostPageProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-8 md:space-y-10">
-        <div className="bg-white rounded-lg shadow-sm p-0">
-          <PostDetail
-            groupId={params.groupId}
-            postId={params.postId}
-            currentUserId={uuid}
-          />
-        </div>
+      <div>
+        <PostDetail
+          groupId={params.groupId}
+          postId={params.postId}
+          currentUserId={uuid}
+        />
       </div>
     </HydrationBoundary>
   );

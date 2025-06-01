@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { IPostComment } from "@/types";
 
 // 게시글 작성 시간 표시 함수
 function getDisplayTime(dateString: string) {
@@ -105,59 +106,74 @@ export function PostDetail({
     enabled: !!postId && !!isPostLoading,
   });
 
-  const { mutate: deletePost, isPending: isDeletingPost } =
-    useDeletePost(postId);
-  const { mutate: createComment, isPending: isCreatingComment } =
-    useCreateComment(postId);
-  const { mutate: deleteComment, isPending: isDeletingComment } =
-    useDeleteComment(postId);
-
-  const handleCommentSubmit = (newComment: any) => {
-    createComment(newComment, {
+  const { mutate: deletePost, isPending: isDeletingPost } = useDeletePost(
+    groupId,
+    {
       onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.getAll(postId),
+        toast({ title: "성공", description: "게시글이 삭제되었습니다." });
+        router.push(`/groups/${groupId}?tab=posts`);
+        router.refresh();
+      },
+      onError: (error) => {
+        toast({
+          title: "삭제 오류",
+          description: error.message || "게시글 삭제 중 오류가 발생했습니다.",
+          variant: "destructive",
         });
-        queryClient.invalidateQueries({
-          queryKey: postQueryKeys.getOne(postId),
+      },
+      onSettled: () => {
+        setShowDeleteDialog(false);
+      },
+    }
+  );
+
+  const { mutate: createComment, isPending: isCreatingComment } =
+    useCreateComment(postId, {
+      onSuccess: () => {
+        toast({ description: "댓글이 작성되었습니다." });
+      },
+      onError: (error) => {
+        toast({
+          title: "댓글 작성 실패",
+          description: error.message || "댓글 작성 중 오류가 발생했습니다.",
+          variant: "destructive",
         });
       },
     });
+
+  const { mutate: deleteComment, isPending: isDeletingComment } =
+    useDeleteComment(postId, {
+      // isPending 상태는 CommentList의 개별 댓글에 전달하여 로딩 상태 표시 가능
+      onSuccess: () => {
+        toast({ description: "댓글이 삭제되었습니다." });
+      },
+      onError: (error) => {
+        toast({
+          title: "댓글 삭제 실패",
+          description: error.message || "댓글 삭제 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      },
+    });
+
+  const handleCommentSubmit = (newComment: IPostComment) => {
+    if (!newComment.content.trim()) {
+      toast({
+        title: "입력 오류",
+        description: "댓글 내용을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createComment(newComment);
   };
 
   const handleCommentDelete = (commentId: string) => {
-    deleteComment(commentId, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: commentQueryKeys.getAll(postId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: postQueryKeys.getOne(postId),
-        });
-      },
-    });
+    deleteComment(commentId);
   };
 
-  const handlePostDelete = async () => {
-    try {
-      await deletePost(postId);
-
-      toast({
-        title: "성공",
-        description: "게시글이 삭제되었습니다",
-      });
-
-      router.push(`/groups/${groupId}?tab=posts`);
-      router.refresh();
-    } catch (e) {
-      toast({
-        title: "오류",
-        description: "게시글 삭제 중 오류가 발생했습니다",
-        variant: "destructive",
-      });
-    } finally {
-      setShowDeleteDialog(false);
-    }
+  const handlePostDelete = () => {
+    deletePost(postId);
   };
 
   if (isPostLoading) {
@@ -195,7 +211,7 @@ export function PostDetail({
     <>
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"

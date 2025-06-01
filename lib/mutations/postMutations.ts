@@ -1,6 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  UseMutationOptions,
+} from "@tanstack/react-query";
 import { postQueryKeys } from "../queries/postQuery";
-import { IGroup, IPost } from "@/types";
+import { IPost } from "@/types";
 
 // 게시글 생성
 export const useCreatePost = (groupId: string) => {
@@ -52,24 +56,50 @@ export const useUpdatePost = (groupId: string) => {
 };
 
 // 게시글 삭제
-export const useDeletePost = (groupId: string) => {
+export const useDeletePost = (
+  groupId: string,
+  options?: Omit<
+    UseMutationOptions<Response, Error, string, unknown>, // Response 타입은 API 응답에 따라 조절
+    "mutationFn" // mutationFn은 훅 내부에서 정의하므로 제외
+  >
+) => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (postId: string) =>
-      fetch(`/api/groups/${groupId}/posts/${postId}`, {
-        method: "DELETE",
-      }),
-    onSuccess: (_, postId) => {
-      // queryClient.setQueryData(
-      //   postQueryKeys.getAll(groupId),
-      //   (old: IPost[] = []) => old.filter((post) => post.id !== postId)
-      // );
 
-      // posts 관련 캐시 무효화
+  return useMutation<Response, Error, string, unknown>({
+    mutationFn: async (postId: string) => {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          message: `게시글 삭제에 실패했습니다. 상태 코드: ${response.status}`,
+        }));
+        throw new Error(
+          errorData.message ||
+            `게시글 삭제에 실패했습니다. 상태 코드: ${response.status}`
+        );
+      }
+      return response;
+    },
+    onSuccess: (data, postId, context) => {
       queryClient.invalidateQueries({
         queryKey: postQueryKeys.getAll(groupId),
-        exact: false,
       });
+
+      if (options?.onSuccess) {
+        options.onSuccess(data, postId, context);
+      }
+    },
+    onError: (error, postId, context) => {
+      console.error(`Error deleting post ${postId}:`, error);
+      if (options?.onError) {
+        options.onError(error, postId, context);
+      }
+    },
+    onSettled: (data, error, postId, context) => {
+      if (options?.onSettled) {
+        options.onSettled(data, error, postId, context);
+      }
     },
   });
 };
