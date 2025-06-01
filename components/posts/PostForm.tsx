@@ -294,7 +294,7 @@ export function PostForm({ groupId, postId }: IPostFormProps) {
       .map((img) => img.uploadedUrl!);
 
     if (isEditMode) {
-      await updatePost({ content, image_urls: finalImageUrls });
+      await updatePost({ id: postId, content, image_urls: finalImageUrls });
 
       if (isUpdatePostError) {
         toast({
