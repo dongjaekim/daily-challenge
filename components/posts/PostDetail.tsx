@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogTrigger,
-  DialogTitle,
   DialogDescription,
   DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -17,32 +17,51 @@ import { LikeButton } from "@/components/posts/LikeButton";
 import { CommentList } from "@/components/posts/CommentList";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Edit, Loader2, MessageSquare, Trash } from "lucide-react";
+import {
+  ArrowLeft,
+  Edit,
+  Loader2,
+  MessageSquare,
+  Trash,
+  AlertTriangle,
+} from "lucide-react";
 import Link from "next/link";
 import { getPost, postQueryKeys } from "@/lib/queries/postQuery";
 import { getComments, commentQueryKeys } from "@/lib/queries/commentQuery";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 import { useDeletePost } from "@/lib/mutations/postMutations";
 import {
   useCreateComment,
   useDeleteComment,
 } from "@/lib/mutations/commentMutations";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 // 게시글 작성 시간 표시 함수
 function getDisplayTime(dateString: string) {
   const now = new Date();
   const postDate = new Date(dateString);
   const diffMs = now.getTime() - postDate.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
+  const diffSeconds = Math.round(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours < 24) {
     // 하루 이내면 "n시간 전", "n분 전" 등 상대시간
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
     if (diffMinutes < 1) return "방금 전";
     if (diffMinutes < 60) return `${diffMinutes}분 전`;
-    return `${Math.floor(diffHours)}시간 전`;
+    return `${diffHours}시간 전`;
+  } else if (now.getFullYear() === postDate.getFullYear()) {
+    return format(postDate, "M월 d일 a h:mm", { locale: ko });
   } else {
-    // 24시간 이상이면 날짜+시간 포맷
     return format(postDate, "yyyy년 M월 d일 a h:mm", { locale: ko });
   }
 }
@@ -58,32 +77,40 @@ export function PostDetail({
   postId,
   currentUserId,
 }: IPostDetailProps) {
-  const { data: post } = useQuery({
-    queryKey: postQueryKeys.getOne(postId),
-    queryFn: () => getPost(postId),
-  });
-
-  const { data: comments, isLoading: isCommentsLoading } = useQuery({
-    queryKey: commentQueryKeys.getAll(postId),
-    queryFn: () => getComments(postId),
-    enabled: !!postId,
-  });
-
-  const { mutate: deletePost } = useDeletePost(postId);
-  const { mutate: createComment } = useCreateComment(postId);
-  const { mutate: deleteComment } = useDeleteComment(postId);
-
-  const queryClient = useQueryClient();
-  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
+  const queryClient = makeQueryClient();
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLikeToggle = (newIsLiked: boolean) => {
-    // setIsLiked(newIsLiked);
-    // setLikeCount((prev) => (newIsLiked ? prev + 1 : prev - 1));
-  };
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const {
+    data: post,
+    isLoading: isPostLoading,
+    isError: isPostError,
+    error: postFetchError,
+  } = useQuery({
+    queryKey: postQueryKeys.getOne(postId),
+    queryFn: () => getPost(postId),
+    enabled: !!postId,
+  });
+
+  const {
+    data: comments,
+    isLoading: isCommentsLoading,
+    isError: isCommentsError,
+    error: commentsFetchError,
+  } = useQuery({
+    queryKey: commentQueryKeys.getAll(postId),
+    queryFn: () => getComments(postId),
+    enabled: !!postId && !!isPostLoading,
+  });
+
+  const { mutate: deletePost, isPending: isDeletingPost } =
+    useDeletePost(postId);
+  const { mutate: createComment, isPending: isCreatingComment } =
+    useCreateComment(postId);
+  const { mutate: deleteComment, isPending: isDeletingComment } =
+    useDeleteComment(postId);
 
   const handleCommentSubmit = (newComment: any) => {
     createComment(newComment, {
@@ -112,8 +139,6 @@ export function PostDetail({
   };
 
   const handlePostDelete = async () => {
-    setIsDeleteLoading(true);
-
     try {
       await deletePost(postId);
 
@@ -131,181 +156,247 @@ export function PostDetail({
         variant: "destructive",
       });
     } finally {
-      setIsDeleteLoading(false);
       setShowDeleteDialog(false);
     }
   };
 
-  // post가 없을 때 처리
-  if (!post) {
+  if (isPostLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] p-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">게시글을 불러오는 중입니다...</p>
+      </div>
+    );
+  }
+
+  if (isPostError || !post) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] p-4 text-center">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-xl font-semibold text-destructive mb-2">
+          게시글을 불러올 수 없습니다
+        </h2>
+        <p className="text-muted-foreground mb-4">
+          {postFetchError?.message ||
+            "요청한 게시글을 찾을 수 없거나 로드 중 오류가 발생했습니다."}
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/groups/${groupId}?tab=posts`)}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          목록으로 돌아가기
+        </Button>
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between bg-white rounded-lg p-4 md:p-6">
-        <div>
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            className="mr-2 sm:mr-6 mt-1 md:h-10"
-          >
-            <Link
-              href={`/groups/${groupId}?tab=posts`}
-              className="flex items-center gap-2"
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full -ml-2 sm:ml-0"
+              asChild
             >
-              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="hidden sm:inline md:text-base">뒤로가기</span>
-            </Link>
-          </Button>
-
-          <div className="flex flex-row items-center gap-3">
-            <img
-              src={post.author?.avatar_url || "/default-profile.png"}
-              alt={post.author?.name}
-              className="w-8 sm:w-10 h-8 sm:h-10 rounded-full object-cover"
-            />
-            <div className="flex-1 ">
-              <div className="flex gap-2 text-sm text-muted-foreground">
-                <div className="flex flex-col">
-                  <span className="font-bold">{post.author?.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {getDisplayTime(post.created_at)}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {post.challenges && post.challenges.length > 0 ? (
-              post.challenges.map((challenge) => (
-                <Link
-                  key={challenge.id}
-                  href={`/groups/${groupId}/challenges/${challenge.id}`}
+              <Link href={`/groups/${groupId}?tab=posts`} aria-label="뒤로가기">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <h1 className="text-lg font-semibold">게시글 상세</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            {post.isAuthor && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    router.push(`/groups/${groupId}/posts/${postId}/edit`)
+                  }
                 >
-                  <span
-                    key={challenge.id}
-                    className="bg-muted px-1.5 py-0.5 rounded text-xs mt-1 mr-1"
-                  >
-                    {challenge.title}
-                  </span>
-                </Link>
-              ))
-            ) : (
-              <span className="bg-muted px-1.5 py-0.5 rounded text-xs mt-1">
-                삭제된 챌린지
-              </span>
+                  <Edit className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">수정</span>
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={isDeletingPost}
+                >
+                  {isDeletingPost ? (
+                    <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+                  ) : (
+                    <Trash className="h-4 w-4 sm:mr-2" />
+                  )}
+                  <span className="hidden sm:inline">삭제</span>
+                </Button>
+              </>
             )}
           </div>
         </div>
+      </header>
 
-        <div className="flex items-start sm:items-end">
-          {post.isAuthor && (
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() =>
-                  router.push(`/groups/${post.group_id}/posts/${post.id}/edit`)
-                }
-                size="sm"
-                className="md:h-10 md:px-4 md:py-2 md:text-base"
-              >
-                <Edit className="h-4 w-4 mr-2 md:h-5 md:w-5" />
-                수정
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-                size="sm"
-                className="md:h-10 md:px-4 md:py-2 md:text-base"
-              >
-                <Trash className="h-4 w-4 mr-2 md:h-5 md:w-5" />
-                삭제
-              </Button>
+      <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8 space-y-6">
+        <Card className="overflow-hidden shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border">
+                  <AvatarImage
+                    src={post.author?.avatar_url || "/default-profile.png"}
+                    alt={post.author?.name || "익명 사용자"}
+                  />
+                  <AvatarFallback>
+                    {post.author?.name?.charAt(0) || "익"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-sm sm:text-base text-foreground">
+                    {post.author?.name || "익명 사용자"}
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {getDisplayTime(post.created_at)}
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="space-y-6 md:space-y-8 p-4 md:p-6">
-        <div className="prose prose-slate max-w-none md:prose-lg">
-          <p className="whitespace-pre-wrap text-base md:text-lg">
-            {post.content}
-          </p>
-        </div>
-
-        {post.image_urls && post.image_urls.length > 0 && (
-          <div className="mt-4 md:mt-6">
-            <ImageGallery images={post.image_urls} postTitle={postId} />
-          </div>
-        )}
-
-        <div className="flex items-center space-x-4 pt-4 md:pt-6 border-t">
-          <LikeButton
-            postId={post.id}
-            initialLikeCount={post.likeCount}
-            initialLiked={post.isLiked}
-            onLikeToggle={handleLikeToggle}
-          />
-          <div className="flex items-center text-muted-foreground">
-            <MessageSquare className="h-4 w-4 md:h-5 md:w-5 mr-1" />
-            <span className="text-sm md:text-base">
-              {post.commentCount}개의 댓글
-            </span>
-          </div>
-        </div>
-
-        <div className="pt-6 md:pt-8">
-          {isCommentsLoading ? (
-            <div className="flex justify-center items-center h-full">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            {post.challenges && post.challenges.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {post.challenges.map((challenge) => (
+                  <Link
+                    key={challenge.id}
+                    href={`/groups/${groupId}/challenges/${challenge.id}`}
+                    passHref
+                  >
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
+                      # {challenge.title}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert break-words whitespace-pre-wrap mt-2">
+              <p>{post.content}</p>
             </div>
-          ) : (
-            <CommentList
-              comments={comments}
+            {post.image_urls && post.image_urls.length > 0 && (
+              <div className="mt-4 sm:mt-6 rounded-lg overflow-hidden">
+                <ImageGallery
+                  images={post.image_urls}
+                  postTitle={`게시글 ${postId}`}
+                />
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="p-4 sm:p-6 bg-muted/30 border-t flex items-center justify-start gap-4 sm:gap-6">
+            <LikeButton
               postId={post.id}
-              currentUserId={currentUserId}
-              onCommentSubmitted={handleCommentSubmit}
-              onCommentDeleted={handleCommentDelete}
+              initialLikeCount={post.likeCount || 0}
+              initialLiked={post.isLiked || false}
+              size="default"
+              variant="ghost"
+              groupId={groupId}
+              className="text-muted-foreground hover:text-primary"
             />
-          )}
-        </div>
-      </div>
+            <div className="flex items-center text-muted-foreground">
+              <MessageSquare className="h-5 w-5 mr-1.5" />
+              <span className="text-sm sm:text-base">
+                {post.commentCount || 0}
+              </span>
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">댓글</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isCommentsLoading && !isCommentsError && (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="ml-2 text-muted-foreground">
+                  댓글을 불러오는 중...
+                </p>
+              </div>
+            )}
+            {isCommentsError && (
+              <div className="py-10 text-center">
+                <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
+                <p className="text-destructive font-medium">댓글 로드 실패</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {commentsFetchError?.message}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() =>
+                    queryClient.refetchQueries({
+                      queryKey: commentQueryKeys.getAll(postId),
+                    })
+                  }
+                >
+                  다시 시도
+                </Button>
+              </div>
+            )}
+            {!isCommentsLoading && !isCommentsError && (
+              <CommentList
+                comments={comments || []}
+                postId={post.id}
+                currentUserId={currentUserId}
+                onCommentSubmitted={handleCommentSubmit}
+                onCommentDeleted={handleCommentDelete}
+                // isSubmittingComment={isCreatingComment}
+                // isDeletingComment={isDeletingComment} // 댓글 삭제 로딩 상태 전달
+              />
+            )}
+          </CardContent>
+        </Card>
+      </main>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>게시글 삭제</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
+              게시글 삭제 확인
+            </DialogTitle>
             <DialogDescription>
               정말 이 게시글을 삭제하시겠습니까? 삭제된 게시글은 복구할 수
               없습니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end space-x-2 pt-4">
+          <DialogFooter className="mt-6 sm:justify-end space-x-2">
             <Button
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeletingPost}
             >
               취소
             </Button>
             <Button
               variant="destructive"
               onClick={handlePostDelete}
-              disabled={isDeleteLoading}
+              disabled={isDeletingPost}
             >
-              {isDeleteLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  삭제하는 중입니다
-                </>
+              {isDeletingPost ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
-                "삭제"
+                <Trash className="h-4 w-4 mr-2" />
               )}
+              삭제하기
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
