@@ -259,7 +259,20 @@ export function PostForm({ groupId, postId }: IPostFormProps) {
     isPending: isUpdating,
     isError: isUpdatePostError,
     error: updateError,
-  } = useUpdatePost(groupId);
+  } = useUpdatePost(groupId, {
+    onSuccess: () => {
+      toast({ title: "성공", description: "게시글이 수정되었습니다." });
+      router.push(`/groups/${groupId}/posts/${postId!}`);
+      router.refresh();
+    },
+    onError: (error) => {
+      toast({
+        title: "오류",
+        description: error.message || "게시글 수정 중 오류 발생",
+        variant: "destructive",
+      });
+    },
+  });
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,18 +307,7 @@ export function PostForm({ groupId, postId }: IPostFormProps) {
       .map((img) => img.uploadedUrl!);
 
     if (isEditMode) {
-      await updatePost({ id: postId, content, image_urls: finalImageUrls });
-
-      if (isUpdatePostError) {
-        toast({
-          title: "오류",
-          description: updateError.message || "게시글 수정 중 오류 발생",
-          variant: "destructive",
-        });
-      }
-      toast({ title: "성공", description: "게시글이 수정되었습니다." });
-      router.push(`/groups/${groupId}/posts/${postId!}`);
-      router.refresh();
+      updatePost({ id: postId, content, image_urls: finalImageUrls });
     } else {
       const challengeIds = selectedChallengeOptions.map((opt) => opt.value);
 

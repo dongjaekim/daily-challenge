@@ -1,20 +1,8 @@
 import { IPost } from "@/types";
 
 export const postQueryKeys = {
-  getAll: (
-    groupId: string,
-    page?: number,
-    pageSize?: number,
-    challengeId?: string
-  ) =>
-    [
-      "groups",
-      groupId,
-      "posts",
-      ...(page !== undefined ? [page] : []),
-      ...(pageSize !== undefined ? [pageSize] : []),
-      challengeId,
-    ] as const,
+  getAll: (groupId: string, challengeId?: string) =>
+    ["groups", groupId, "posts", challengeId] as const,
   getOne: (postId: string) => ["posts", postId] as const,
 };
 

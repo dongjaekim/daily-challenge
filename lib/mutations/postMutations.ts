@@ -33,24 +33,53 @@ export const useCreatePost = (groupId: string) => {
 };
 
 // 게시글 수정
-export const useUpdatePost = (groupId: string) => {
+export const useUpdatePost = (
+  groupId: string,
+  options?: Omit<
+    UseMutationOptions<Response, Error, Partial<IPost>, unknown>, // Response 타입은 API 응답에 따라 조절
+    "mutationFn" // mutationFn은 훅 내부에서 정의하므로 제외
+  >
+) => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (updatedPost: Partial<IPost>) =>
-      fetch(`/api/posts/${updatedPost.id}`, {
+
+  return useMutation<Response, Error, Partial<IPost>, unknown>({
+    mutationFn: async (updatedPost: Partial<IPost>) => {
+      const response = await fetch(`/api/posts/${updatedPost.id}`, {
         method: "PATCH",
         body: JSON.stringify(updatedPost),
-      }).then((res) => {
-        if (!res.ok) throw new Error("게시글 수정에 실패했습니다.");
-        return res.json();
-      }),
-    onSuccess: (updatedPost) => {
-      // posts 관련 캐시 무효화
-      queryClient.setQueryData(
-        postQueryKeys.getAll(groupId),
-        (old: IPost[] = []) =>
-          old.map((post) => (post.id === updatedPost.id ? updatedPost : post))
-      );
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          message: `게시글 수정에 실패했습니다. 상태 코드: ${response.status}`,
+        }));
+        throw new Error(
+          errorData.message ||
+            `게시글 수정에 실패했습니다. 상태 코드: ${response.status}`
+        );
+      }
+      return response;
+    },
+    onSuccess: (data, updatedPost, context) => {
+      queryClient.invalidateQueries({
+        queryKey: postQueryKeys.getAll(groupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: postQueryKeys.getOne(updatedPost.id!),
+      });
+      if (options?.onSuccess) {
+        options.onSuccess(data, updatedPost, context);
+      }
+    },
+    onError: (error, updatedPost, context) => {
+      console.error(`Error updating post ${updatedPost}:`, error);
+      if (options?.onError) {
+        options.onError(error, updatedPost, context);
+      }
+    },
+    onSettled: (data, error, updatedPost, context) => {
+      if (options?.onSettled) {
+        options.onSettled(data, error, updatedPost, context);
+      }
     },
   });
 };

@@ -129,8 +129,6 @@ export function GroupPostsView({ groupId }: GroupPostsViewProps) {
   } = useInfiniteQuery({
     queryKey: postQueryKeys.getAll(
       groupId,
-      undefined,
-      5,
       selectedChallenge === "all" ? undefined : selectedChallenge
     ),
     queryFn: fetchPosts,
