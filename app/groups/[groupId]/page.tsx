@@ -56,7 +56,7 @@ export default async function GroupPage({
   });
 
   queryClient.prefetchQuery({
-    queryKey: postQueryKeys.getAll(params.groupId, 1, 5),
+    queryKey: postQueryKeys.getAll(params.groupId),
     queryFn: () => getPosts(params.groupId, 1, 5),
   });
 
