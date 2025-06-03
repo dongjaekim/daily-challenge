@@ -28,8 +28,7 @@ import {
 import Link from "next/link";
 import { getPost, postQueryKeys } from "@/lib/queries/postQuery";
 import { getComments, commentQueryKeys } from "@/lib/queries/commentQuery";
-import { useQuery } from "@tanstack/react-query";
-import { makeQueryClient } from "@/lib/queries/makeQueryClient";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeletePost } from "@/lib/mutations/postMutations";
 import {
   Card,
@@ -73,7 +72,7 @@ export function PostDetail({
   postId,
   currentUserId,
 }: IPostDetailProps) {
-  const queryClient = makeQueryClient();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -207,7 +206,7 @@ export function PostDetail({
       </header>
 
       <main className="container mx-auto px-2 sm:px-4 py-6 sm:py-8 space-y-6">
-        <Card className="overflow-hidden shadow-md">
+        <Card className="overflow-hidden shadow-lg rounded-xl">
           <CardHeader className="p-4 sm:p-6">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
@@ -250,12 +249,12 @@ export function PostDetail({
               </div>
             )}
           </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
+          <CardContent className="p-4 sm:p-6 pt-2 sm:pt-4">
             <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert break-words whitespace-pre-wrap mt-2">
               <p>{post.content}</p>
             </div>
             {post.image_urls && post.image_urls.length > 0 && (
-              <div className="mt-4 sm:mt-6 rounded-lg overflow-hidden">
+              <div className="mt-6 rounded-lg overflow-hidden border">
                 <ImageGallery
                   images={post.image_urls}
                   postTitle={`게시글 ${postId}`}
@@ -273,60 +272,18 @@ export function PostDetail({
               groupId={groupId}
               className="text-muted-foreground hover:text-primary"
             />
-            <div className="flex items-center text-muted-foreground">
-              <MessageSquare className="h-5 w-5 mr-1.5" />
-              <span className="text-sm sm:text-base">
-                {post.commentCount || 0}
-              </span>
-            </div>
           </CardFooter>
         </Card>
 
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">댓글</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isCommentsLoading && !isCommentsError && (
-              <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <p className="ml-2 text-muted-foreground">
-                  댓글을 불러오는 중...
-                </p>
-              </div>
-            )}
-            {isCommentsError && (
-              <div className="py-10 text-center">
-                <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
-                <p className="text-destructive font-medium">댓글 로드 실패</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {commentsFetchError?.message}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3"
-                  onClick={() =>
-                    queryClient.refetchQueries({
-                      queryKey: commentQueryKeys.getAll(postId),
-                    })
-                  }
-                >
-                  다시 시도
-                </Button>
-              </div>
-            )}
-            {!isCommentsLoading && !isCommentsError && (
-              <CommentList
-                comments={comments || []}
-                postId={post.id}
-                currentUserId={currentUserId}
-                isCommentsLoading={isCommentsLoading}
-                commentCount={post.commentCount}
-              />
-            )}
-          </CardContent>
-        </Card>
+        <div className="mt-8">
+          <CommentList
+            comments={comments || []}
+            postId={post.id}
+            currentUserId={currentUserId}
+            isCommentsLoading={isCommentsLoading}
+            commentCount={post.commentCount}
+          />
+        </div>
       </main>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

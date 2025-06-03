@@ -58,31 +58,34 @@ export function CommentList({
   }
 
   return (
-    <div className="space-y-6 pt-2">
-      <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-2 text-foreground border-b pb-3 mb-4">
-        <MessageCircle className="h-5 w-5 text-primary" />
-        <span>
-          댓글{" "}
-          {commentCount > 0 ? (
-            <span className="text-primary font-bold">{commentCount}</span>
-          ) : (
-            ""
-          )}
-        </span>
-      </h3>
-
-      {/* 최상단 댓글 작성 폼 */}
-      <div className="p-1">
+    <section
+      aria-labelledby="comment-section-title"
+      className="pt-6 pb-2 space-y-6"
+    >
+      <div className="px-1 md:px-0">
+        <h2
+          id="comment-section-title"
+          className="text-xl sm:text-2xl font-semibold flex items-center text-foreground mb-5"
+        >
+          <MessageCircle className="h-6 w-6 mr-2.5 text-primary" />
+          <span>
+            {commentCount > 0
+              ? `댓글 ${commentCount}개`
+              : "첫 댓글을 남겨주세요!"}
+          </span>
+        </h2>
         <CommentForm
           onSubmit={handleTopLevelCommentSubmit}
           isSubmitting={isCreatingTopLevelComment}
           placeholder="따뜻한 격려와 응원의 댓글을 남겨주세요 :)"
-          submitButtonText="등록"
+          submitButtonText="댓글 등록"
+          className="mb-8"
         />
       </div>
 
+      {/* 댓글 목록 */}
       {comments.length > 0 ? (
-        <div className="space-y-4 divide-y divide-border pt-4">
+        <div className="space-y-4 divide-y divide-border rounded-lg border p-0 md:p-0">
           {comments.map((comment) => (
             <Comment
               key={comment.id}
@@ -94,15 +97,15 @@ export function CommentList({
         </div>
       ) : (
         !isCommentsLoading && ( // 로딩 중이 아닐 때만 "댓글 없음" 메시지 표시
-          <div className="text-center py-10 text-muted-foreground border border-dashed rounded-md">
-            <MessageCircle className="mx-auto h-10 w-10 mb-3 text-gray-400" />
-            <p className="font-medium">아직 등록된 댓글이 없습니다.</p>
-            <p className="text-sm">
+          <div className="text-center py-12 text-muted-foreground border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/30">
+            <MessageCircle className="mx-auto h-12 w-12 mb-4 text-gray-400 dark:text-gray-500" />
+            <p className="text-lg font-medium">아직 댓글이 없습니다.</p>
+            <p className="text-sm mt-1">
               가장 먼저 따뜻한 응원의 메시지를 남겨보세요!
             </p>
           </div>
         )
       )}
-    </div>
+    </section>
   );
 }
