@@ -70,18 +70,18 @@ export async function GET(
         user:user_id (
           id, name, email, avatar_url
         ),
-        challenge:challenge_id (
+        challenge:challenge_id!inner (
           id, title, description, group_id
         )
       `
       )
-      .eq("challenge.group_id", params.groupId);
+      .eq("challenge_id.group_id", params.groupId);
 
     // 쿼리 실행 및 정렬
     const { data } = await query.order("created_at", {
       ascending: false,
     });
-
+    console.log(data);
     return NextResponse.json(data || []);
   } catch (error) {
     console.log("[CHALLENGE_RECORDS_GET]", error);
