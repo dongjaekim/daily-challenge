@@ -1,7 +1,7 @@
 import {
   useMutation,
-  useQueryClient,
   UseMutationOptions,
+  useQueryClient,
 } from "@tanstack/react-query";
 import { postQueryKeys } from "../queries/postQuery";
 import { IPost } from "@/types";
@@ -9,6 +9,7 @@ import { IPost } from "@/types";
 // 게시글 생성
 export const useCreatePost = (groupId: string) => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (newPost: {
       content: string;
@@ -136,6 +137,7 @@ export const useDeletePost = (
 // 좋아요 토글
 export const useToggleLike = (groupId: string, postId: string) => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (isLiked: boolean) =>
       fetch(`/api/groups/${groupId}/posts/${postId}/like`, {

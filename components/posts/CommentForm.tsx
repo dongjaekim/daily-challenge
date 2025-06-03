@@ -1,106 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send } from "lucide-react";
-import { IPostComment } from "@/types";
+
+interface CommentFormValues {
+  content: string;
+}
 
 interface ICommentFormProps {
-  postId: string;
-  parentId?: string | null;
-  onCommentSubmitted: (comment: IPostComment) => void;
+  onSubmit: (values: CommentFormValues) => void; // 뮤테이션 실행 함수 등을 호출
+  isSubmitting: boolean; // 부모 컴포넌트에서 뮤테이션 로딩 상태 전달
+  initialContent?: string;
   placeholder?: string;
-  buttonText?: string;
+  submitButtonText?: string;
   autoFocus?: boolean;
   onCancel?: () => void;
+  className?: string;
 }
 
 export function CommentForm({
-  postId,
-  parentId = null,
-  onCommentSubmitted,
-  placeholder = "댓글을 작성해보세요...",
-  buttonText = "댓글 작성",
+  onSubmit,
+  isSubmitting,
+  initialContent = "",
+  placeholder = "댓글을 남겨주세요",
+  submitButtonText = "댓글 등록",
   autoFocus = false,
   onCancel,
+  className,
 }: ICommentFormProps) {
   const [content, setContent] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // initialContent가 외부에서 변경될 경우 content 상태 업데이트
+  useEffect(() => {
+    setContent(initialContent);
+  }, [initialContent]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!content.trim()) {
-      toast({
-        title: "댓글을 입력해주세요",
-        variant: "destructive",
-      });
       return;
     }
+    onSubmit({ content });
 
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`/api/posts/${postId}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content,
-          parentId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("댓글 작성에 실패했습니다.");
-      }
-
-      const comment = await response.json();
-
-      // 성공적으로 댓글이 작성됨
-      toast({
-        title: "댓글이 작성되었습니다",
-      });
-
+    if (!initialContent) {
+      // 새 댓글 작성 시에만 초기화 (수정 시에는 유지)
       setContent("");
-      onCommentSubmitted(comment);
-
-      if (onCancel) {
-        onCancel();
-      }
-    } catch (error) {
-      toast({
-        title: "오류",
-        description: "댓글 작성 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className={`space-y-3 ${className}`}>
       <Textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={placeholder}
-        disabled={isLoading}
-        className="resize-none min-h-[80px] focus-visible:ring-primary"
+        disabled={isSubmitting}
+        className="resize-none min-h-[70px] sm:min-h-[80px] text-sm rounded-md border-border focus-visible:ring-1 focus-visible:ring-ring"
         autoFocus={autoFocus}
       />
-      <div className="flex justify-end gap-2">
+      <div className="flex items-center justify-end gap-2">
         {onCancel && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={onCancel}
-            disabled={isLoading}
+            disabled={isSubmitting}
+            className="text-muted-foreground hover:text-accent-foreground"
           >
             취소
           </Button>
@@ -108,18 +77,18 @@ export function CommentForm({
         <Button
           type="submit"
           size="sm"
-          disabled={isLoading || !content.trim()}
-          className="gap-1"
+          disabled={isSubmitting || !content.trim()}
+          className="min-w-[90px] bg-primary hover:bg-primary/90 text-primary-foreground rounded-md"
         >
-          {isLoading ? (
+          {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               작성 중...
             </>
           ) : (
             <>
-              <Send className="h-4 w-4" />
-              {buttonText}
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              {submitButtonText}
             </>
           )}
         </Button>

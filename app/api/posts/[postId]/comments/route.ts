@@ -16,7 +16,7 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { content, parentId } = body;
+    const { content, parent_id } = body;
 
     if (!content) {
       return new NextResponse("Content is required", { status: 400 });
@@ -29,9 +29,9 @@ export async function POST(
     }
 
     // 부모 댓글이 있는 경우, 존재하는지 확인 및 깊이(depth) 검증
-    if (parentId) {
+    if (parent_id) {
       const parentComment = await supabaseDb.select("post_comments", {
-        id: parentId,
+        id: parent_id,
       });
       if (!parentComment) {
         return new NextResponse("Parent comment not found", { status: 404 });
@@ -50,7 +50,7 @@ export async function POST(
       post_id: params.postId,
       user_id: uuid,
       content,
-      parent_id: parentId || null,
+      parent_id: parent_id || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });

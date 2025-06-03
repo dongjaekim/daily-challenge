@@ -1,10 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { groupQueryKeys } from "../queries/groupQuery";
 import { IGroup } from "@/types";
-import { getQueryClient } from "@/app/providers";
 
 export const useCreateGroup = () => {
-  const queryClient = getQueryClient();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (newGroup: Partial<IGroup>) =>
       fetch("/api/groups", {
@@ -25,7 +25,8 @@ export const useCreateGroup = () => {
 };
 
 export const useDeleteGroup = () => {
-  const queryClient = getQueryClient();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (groupId: string) =>
       fetch(`/api/groups/${groupId}`, {
@@ -64,7 +65,8 @@ export const useDeleteGroup = () => {
 };
 
 export const useUpdateGroup = () => {
-  const queryClient = getQueryClient();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (updatedGroup: Partial<IGroup>) =>
       fetch(`/api/groups/${updatedGroup.id}`, {

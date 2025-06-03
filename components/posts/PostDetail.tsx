@@ -32,10 +32,6 @@ import { useQuery } from "@tanstack/react-query";
 import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 import { useDeletePost } from "@/lib/mutations/postMutations";
 import {
-  useCreateComment,
-  useDeleteComment,
-} from "@/lib/mutations/commentMutations";
-import {
   Card,
   CardContent,
   CardHeader,
@@ -44,7 +40,6 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { IPostComment } from "@/types";
 
 // 게시글 작성 시간 표시 함수
 function getDisplayTime(dateString: string) {
@@ -103,7 +98,7 @@ export function PostDetail({
   } = useQuery({
     queryKey: commentQueryKeys.getAll(postId),
     queryFn: () => getComments(postId),
-    enabled: !!postId && !!isPostLoading,
+    enabled: !!post,
   });
 
   const { mutate: deletePost, isPending: isDeletingPost } = useDeletePost(
@@ -126,51 +121,6 @@ export function PostDetail({
       },
     }
   );
-
-  const { mutate: createComment, isPending: isCreatingComment } =
-    useCreateComment(postId, {
-      onSuccess: () => {
-        toast({ description: "댓글이 작성되었습니다." });
-      },
-      onError: (error) => {
-        toast({
-          title: "댓글 작성 실패",
-          description: error.message || "댓글 작성 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-      },
-    });
-
-  const { mutate: deleteComment, isPending: isDeletingComment } =
-    useDeleteComment(postId, {
-      // isPending 상태는 CommentList의 개별 댓글에 전달하여 로딩 상태 표시 가능
-      onSuccess: () => {
-        toast({ description: "댓글이 삭제되었습니다." });
-      },
-      onError: (error) => {
-        toast({
-          title: "댓글 삭제 실패",
-          description: error.message || "댓글 삭제 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-      },
-    });
-
-  const handleCommentSubmit = (newComment: IPostComment) => {
-    if (!newComment.content.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "댓글 내용을 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    createComment(newComment);
-  };
-
-  const handleCommentDelete = (commentId: string) => {
-    deleteComment(commentId);
-  };
 
   const handlePostDelete = () => {
     deletePost(postId);
@@ -371,10 +321,8 @@ export function PostDetail({
                 comments={comments || []}
                 postId={post.id}
                 currentUserId={currentUserId}
-                onCommentSubmitted={handleCommentSubmit}
-                onCommentDeleted={handleCommentDelete}
-                // isSubmittingComment={isCreatingComment}
-                // isDeletingComment={isDeletingComment} // 댓글 삭제 로딩 상태 전달
+                isCommentsLoading={isCommentsLoading}
+                commentCount={post.commentCount}
               />
             )}
           </CardContent>

@@ -1,10 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { groupMemberQueryKeys } from "../queries/groupMemberQuery";
 import { IGroupMember } from "@/types";
-import { getQueryClient } from "@/app/providers";
 
 export const useCreateGroupMember = (groupId: string) => {
-  const queryClient = getQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (newGroupMember: Partial<IGroupMember>) =>
       fetch("/api/groups/${groupId}", {
