@@ -1,9 +1,12 @@
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import {
+  dehydrate,
+  HydrationBoundary,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { getPost, postQueryKeys } from "@/lib/queries/postQuery";
 import { PostDetail } from "@/components/posts/PostDetail";
-import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 import { commentQueryKeys, getComments } from "@/lib/queries/commentQuery";
 
 interface IPostPageProps {
@@ -21,7 +24,7 @@ export default async function PostPage({ params }: IPostPageProps) {
     return notFound();
   }
 
-  const queryClient = makeQueryClient();
+  const queryClient = useQueryClient();
 
   queryClient.prefetchQuery({
     queryKey: postQueryKeys.getOne(params.postId),

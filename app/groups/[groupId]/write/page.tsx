@@ -1,10 +1,13 @@
 import { PostForm } from "@/components/posts/PostForm";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import {
+  dehydrate,
+  HydrationBoundary,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   challengeQueryKeys,
   getChallenges,
 } from "@/lib/queries/challengeQuery";
-import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
 
@@ -22,7 +25,7 @@ export default async function WritePage({ params }: IWritePageProps) {
     return notFound();
   }
 
-  const queryClient = makeQueryClient();
+  const queryClient = useQueryClient();
 
   queryClient.prefetchQuery({
     queryKey: challengeQueryKeys.getAll(params.groupId),

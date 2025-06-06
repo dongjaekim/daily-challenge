@@ -40,8 +40,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { IChallenge, IPost } from "@/types";
-import { useQuery } from "@tanstack/react-query";
-import { makeQueryClient } from "@/lib/queries/makeQueryClient";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPost, postQueryKeys } from "@/lib/queries/postQuery";
 import { useCreatePost, useUpdatePost } from "@/lib/mutations/postMutations";
 import {
@@ -76,7 +75,7 @@ export function PostForm({ groupId, postId }: IPostFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const queryClient = makeQueryClient();
+  const queryClient = useQueryClient();
 
   const isEditMode = !!postId;
 
