@@ -85,7 +85,7 @@ export function CommentList({
 
       {/* 댓글 목록 */}
       {comments.length > 0 ? (
-        <div className="divide-y divide-border border-b border-t border-border p-0 md:p-0">
+        <div className="divide-y divide-border border-b border-border p-0 md:p-0">
           {comments.map((comment) => (
             <Comment
               key={comment.id}
