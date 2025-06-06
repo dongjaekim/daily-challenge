@@ -1,163 +1,125 @@
 "use client";
 
+import { useState, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
-import { useState, useCallback } from "react";
-import { IChallenge } from "@/types";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import {
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+export interface ChallengeFormValues {
+  title: string;
+  description: string;
+}
 
 interface IChallengeFormProps {
-  groupId: string;
-  initialData?: {
-    title: string;
-    description: string;
-  };
-  challengeId?: string;
-  onSuccess?: (challenge: IChallenge) => void;
+  initialData?: ChallengeFormValues;
+  isSubmitting: boolean;
+  onSubmit: (values: ChallengeFormValues) => void;
   onClose?: () => void;
+  mode?: "create" | "edit";
 }
 
 export function ChallengeForm({
-  groupId,
   initialData,
-  challengeId,
-  onSuccess,
+  isSubmitting,
+  onSubmit,
   onClose,
+  mode = "create",
 }: IChallengeFormProps) {
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(
     initialData?.description || ""
   );
-  const [isLoading, setIsLoading] = useState(false);
 
-  // 제목 변경 핸들러
-  const handleTitleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setTitle(e.target.value);
-    },
-    []
-  );
-
-  // 설명 변경 핸들러
-  const handleDescriptionChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setDescription(e.target.value);
-    },
-    []
-  );
-
-  // 폼 제출 핸들러
-  const onSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsLoading(true);
-
-      try {
-        const url = challengeId
-          ? `/api/groups/${groupId}/challenges/${challengeId}`
-          : `/api/groups/${groupId}/challenges`;
-        const method = challengeId ? "PATCH" : "POST";
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title,
-            description,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("챌린지 생성/수정에 실패했습니다.");
-        }
-
-        const challenge = await response.json();
-
-        toast({
-          title: "성공",
-          description: challengeId
-            ? "챌린지가 수정되었습니다."
-            : "챌린지가 생성되었습니다.",
-        });
-
-        // 생성/수정 성공 시 콜백 호출
-        if (onSuccess) {
-          onSuccess(challenge);
-        }
-
-        // 대화상자 닫기
-        if (onClose) {
-          onClose();
-        }
-
-        // 입력 필드 초기화
-        if (!challengeId) {
-          setTitle("");
-          setDescription("");
-        }
-      } catch (error) {
-        toast({
-          title: "오류",
-          description: "챌린지 생성/수정 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [challengeId, description, groupId, onClose, onSuccess, title, toast]
-  );
-
-  // 취소 핸들러
-  const handleCancel = useCallback(() => {
-    if (onClose) {
-      onClose();
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title);
+      setDescription(initialData.description);
     }
-  }, [onClose]);
+  }, [initialData]);
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      alert("챌린지 제목을 입력해주세요.");
+      return;
+    }
+
+    onSubmit({ title, description });
+  };
+
+  const isEditMode = mode === "edit";
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="title" className="text-sm font-medium">
-          챌린지 제목
-        </label>
-        <Input
-          id="title"
-          value={title}
-          onChange={handleTitleChange}
-          required
-          disabled={isLoading}
-        />
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="description" className="text-sm font-medium">
-          챌린지 설명
-        </label>
-        <Textarea
-          id="description"
-          value={description}
-          onChange={handleDescriptionChange}
-          disabled={isLoading}
-        />
-      </div>
-      <div className="flex justify-end space-x-2">
-        {onClose && (
+    <>
+      <DialogHeader>
+        <DialogTitle className="text-xl">
+          {isEditMode ? "챌린지 수정" : "새 챌린지 생성"}
+        </DialogTitle>
+        <DialogDescription>
+          {isEditMode
+            ? "챌린지의 이름과 설명을 수정합니다."
+            : "멤버들과 함께 달성할 새로운 목표를 만들어보세요."}
+        </DialogDescription>
+      </DialogHeader>
+
+      <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+        <div className="space-y-2">
+          <Label htmlFor="challenge-title">챌린지 제목 (필수)</Label>
+          <Input
+            id="challenge-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="예: 매일 30분 책 읽기"
+            required
+            disabled={isSubmitting}
+            autoFocus
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="challenge-description">챌린지 설명 (선택)</Label>
+          <Textarea
+            id="challenge-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="챌린지 목표에 대해 간단히 설명해주세요."
+            disabled={isSubmitting}
+            className="resize-none min-h-[100px]"
+          />
+        </div>
+        <DialogFooter className="pt-4">
+          {onClose && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              취소
+            </Button>
+          )}
           <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isLoading}
+            type="submit"
+            disabled={isSubmitting || !title.trim()}
+            className="min-w-[110px]"
           >
-            취소
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isEditMode ? (
+              "수정 완료"
+            ) : (
+              "챌린지 생성"
+            )}
           </Button>
-        )}
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "처리 중..." : challengeId ? "수정하기" : "생성하기"}
-        </Button>
-      </div>
-    </form>
+        </DialogFooter>
+      </form>
+    </>
   );
 }

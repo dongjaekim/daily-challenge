@@ -1,99 +1,84 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 import { ChallengeForm } from "@/components/challenges/ChallengeForm";
 import { ChallengeList } from "@/components/challenges/ChallengeList";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { IChallenge } from "@/types";
+import { useCreateChallenge } from "@/lib/mutations/challengeMutations";
+import { ArrowLeft, Plus } from "lucide-react";
 
 interface IClientChallengesProps {
   groupId: string;
-  initialChallenges: IChallenge[];
-  userRole: "owner" | "member";
   currentUserId: string;
 }
 
 export function ClientChallenges({
   groupId,
-  initialChallenges,
-  userRole,
   currentUserId,
 }: IClientChallengesProps) {
-  const [challenges, setChallenges] = useState<IChallenge[]>(initialChallenges);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const router = useRouter();
 
-  // 새 챌린지 추가 (useCallback으로 메모이제이션)
-  const handleChallengeCreated = useCallback(
-    (challenge: IChallenge) => {
-      // 새 챌린지에 달성 횟수 0 추가
-      const newChallenge = {
-        ...challenge,
-        progressSum: 0,
-        created_by: currentUserId,
-      };
-      setChallenges((prev) => [newChallenge, ...prev]);
-      setIsOpen(false);
-    },
-    [currentUserId]
+  const { mutate: createChallenge, isPending: isCreating } = useCreateChallenge(
+    groupId,
+    {
+      onSuccess: () => {
+        toast({
+          title: "성공",
+          description: "새로운 챌린지가 생성되었습니다.",
+        });
+        setIsCreateDialogOpen(false);
+      },
+      onError: (error) => {
+        toast({
+          title: "생성 실패",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    }
   );
 
-  // 챌린지 업데이트 (useCallback으로 메모이제이션)
-  const handleChallengeUpdated = useCallback((updatedChallenge: IChallenge) => {
-    setChallenges((prev) =>
-      prev.map((challenge) =>
-        challenge.id === updatedChallenge.id
-          ? { ...challenge, ...updatedChallenge }
-          : challenge
-      )
-    );
-  }, []);
-
-  // 챌린지 삭제 (useCallback으로 메모이제이션)
-  const handleChallengeDeleted = useCallback((deletedChallengeId: String) => {
-    setChallenges((prev) =>
-      prev.filter((challenge) => challenge.id !== deletedChallengeId)
-    );
-  }, []);
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="container mx-auto max-w-5xl py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={() => router.push(`/groups/${groupId}`)}
-            className="mr-2"
+            className="flex-shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold">챌린지 목록</h1>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">챌린지 관리</h1>
+            <p className="text-muted-foreground mt-1">
+              모임의 목표를 설정하고 관리하세요.
+            </p>
+          </div>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>새 챌린지 생성</Button>
+            <Button className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />새 챌린지 생성
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <ChallengeForm
-              groupId={groupId}
-              onSuccess={handleChallengeCreated}
-              onClose={() => setIsOpen(false)}
+              onSubmit={(data) => createChallenge(data)}
+              isSubmitting={isCreating}
+              onClose={() => setIsCreateDialogOpen(false)}
             />
           </DialogContent>
         </Dialog>
-      </div>
-      <ChallengeList
-        groupId={groupId}
-        challenges={challenges}
-        role={userRole}
-        currentUserId={currentUserId}
-        onChallengeUpdated={handleChallengeUpdated}
-        onChallengeDeleted={handleChallengeDeleted}
-      />
+      </header>
+      <main>
+        <ChallengeList groupId={groupId} currentUserId={currentUserId} />
+      </main>
     </div>
   );
 }
