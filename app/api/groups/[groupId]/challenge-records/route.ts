@@ -61,6 +61,10 @@ export async function GET(
   { params }: { params: { groupId: string } }
 ) {
   try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+    const monthly = searchParams.get("monthly");
+
     // 직접 쿼리 작성 - challenge_progress 테이블과 users, challenges 테이블 조인
     let query = supabase
       .from("challenge_progress")
@@ -77,11 +81,29 @@ export async function GET(
       )
       .eq("challenge_id.group_id", params.groupId);
 
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    // 시작일 필터
+    if (monthly) {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        .toISOString()
+        .split("T")[0];
+      query = query
+        .gte("created_at", `${startOfMonth}T00:00:00`)
+        .lte("created_at", `${endOfMonth}T23:59:59`);
+    }
+
     // 쿼리 실행 및 정렬
     const { data } = await query.order("created_at", {
       ascending: false,
     });
-    console.log(data);
+
     return NextResponse.json(data || []);
   } catch (error) {
     console.log("[CHALLENGE_RECORDS_GET]", error);
