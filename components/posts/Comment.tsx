@@ -6,7 +6,20 @@ import { ko } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CommentForm } from "./CommentForm";
-import { CornerDownRight, Edit, Loader2, Reply, Trash } from "lucide-react";
+import {
+  CornerDownRight,
+  Edit,
+  Loader2,
+  Reply,
+  Trash,
+  MoreVertical,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -151,10 +164,10 @@ export function Comment({
   const authorName = comment.author?.name || "익명 사용자";
   const avatarUrl = comment.author?.avatar_url;
 
-  const outerClasses = `group/comment ${
+  const outerClasses = `group/comment relative ${
     isReply
-      ? "ml-4" // 답글: 왼쪽 들여쓰기 및 왼쪽 테두리
-      : "" // 최상위 댓글: 하단 테두리
+      ? "ml-3" // 답글: 왼쪽 들여쓰기
+      : ""
   }`;
 
   // 내부 패딩은 답글과 최상위 댓글 모두에 동일하게 적용될 수 있도록 조정
@@ -165,122 +178,132 @@ export function Comment({
 
   return (
     <div className={outerClasses}>
-      <div className={innerPaddingClasses}>
-        <div className="flex items-start gap-3">
-          {isReply && ( // 답글일 때만 아이콘 표시, 패딩 영역 안으로 이동
-            <CornerDownRight className="h-4 w-4 text-muted-foreground mt-[3px] flex-shrink-0" />
-          )}
-          <Avatar
-            className={`flex-shrink-0 h-8 w-8 ${isReply ? "h-7 w-7" : ""}`}
+      <div className="flex items-start gap-3 py-4 pl-3 pr-2 sm:pl-4 sm:pr-3">
+        {isReply && ( // 답글일 때만 아이콘 표시, 패딩 영역 안으로 이동
+          <CornerDownRight className="h-4 w-4 text-muted-foreground mt-[3px] flex-shrink-0" />
+        )}
+        <Avatar className={`flex-shrink-0 h-8 w-8 ${isReply ? "h-7 w-7" : ""}`}>
+          <AvatarImage src={avatarUrl} alt={authorName} />
+          <AvatarFallback
+            className={`text-xs ${
+              isReply ? "text-[10px]" : ""
+            } bg-muted text-muted-foreground`}
           >
-            <AvatarImage src={avatarUrl} alt={authorName} />
-            <AvatarFallback
-              className={`text-xs ${
-                isReply ? "text-[10px]" : ""
-              } bg-muted text-muted-foreground`}
-            >
-              {getInitials(authorName)}
-            </AvatarFallback>
-          </Avatar>
+            {getInitials(authorName)}
+          </AvatarFallback>
+        </Avatar>
 
-          <div className="flex-1 text-sm min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-wrap mr-2">
-                <span className="font-semibold text-foreground break-all">
-                  {authorName}
-                </span>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {formattedDate} {wasEdited && !isDeleted && "(수정됨)"}
-                </span>
-              </div>
-
-              {/* 본인 댓글에만 수정/삭제 버튼 표시 */}
-              {!isDeleted && isOwner && !isEditing && (
-                <div className="flex gap-0.5 flex-shrink-0 opacity-0 group-hover/comment:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      setIsEditing(true);
-                      setEditContent(comment.content);
-                    }}
-                    aria-label="댓글 수정"
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive/80"
-                    onClick={() => setShowDeleteAlert(true)}
-                    aria-label="댓글 삭제"
-                  >
-                    <Trash className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
+        <div className="flex-1 text-sm min-w-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-wrap mr-10">
+              <span className="font-semibold text-foreground break-all">
+                {authorName}
+              </span>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {formattedDate} {wasEdited && !isDeleted && "(수정됨)"}
+              </span>
             </div>
 
-            {isEditing ? (
-              <div className="mt-2">
-                <CommentForm
-                  onSubmit={({ content }) => {
-                    handleEditSubmit(content);
-                  }}
-                  isSubmitting={isSubmittingEdit}
-                  initialContent={editContent}
-                  submitButtonText="수정 완료"
-                  placeholder="댓글 수정..."
-                  onCancel={() => {
-                    setIsEditing(false);
-                    setEditContent(comment.content);
-                  }}
-                  autoFocus
-                  className="!space-y-2"
-                />
-              </div>
-            ) : (
-              <p
-                className={`mt-1.5 leading-relaxed break-words ${
-                  isDeleted
-                    ? "text-muted-foreground italic"
-                    : "text-foreground/90"
-                }`}
-              >
-                {comment.content}
-              </p>
-            )}
-
-            {/* 답글 - 삭제된 댓글이나 수정 중이 아닌 경우에만 표시 */}
-            {!isDeleted && !isEditing && !isReply && (
-              <div className="mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsReplying((prev) => !prev)}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded-md"
-                >
-                  <Reply className="h-3.5 w-3.5 mr-1" />
-                  {isReplying ? "답글 취소" : "답글 달기"}
-                </Button>
-              </div>
-            )}
-
-            {/* 답글 작성 폼 */}
-            {isReplying && (
-              <div className="mt-3">
-                <CommentForm
-                  onSubmit={handleReplyFormSubmit}
-                  isSubmitting={isSubmittingReply}
-                  placeholder={`${authorName}님에게 답글 작성...`}
-                  submitButtonText="답글 등록"
-                  autoFocus
-                  onCancel={() => setIsReplying(false)}
-                />
+            {/* 본인 댓글에만 수정/삭제 버튼 표시 */}
+            {!isDeleted && isOwner && !isEditing && (
+              <div className="absolute top-2 right-1 sm:right-2 opacity-100 sm:opacity-0 group-hover/comment:opacity-100 transition-opacity">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                      <span className="sr-only">댓글 옵션</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setIsEditing(true);
+                        setEditContent(comment.content);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Edit className="mr-2 h-3.5 w-3.5" />
+                      <span>댓글 수정</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setShowDeleteAlert(true);
+                      }}
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                    >
+                      <Trash className="mr-2 h-3.5 w-3.5" />
+                      <span>댓글 삭제</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )}
           </div>
+
+          {isEditing ? (
+            <div className="mt-2">
+              <CommentForm
+                onSubmit={({ content }) => {
+                  handleEditSubmit(content);
+                }}
+                isSubmitting={isSubmittingEdit}
+                initialContent={editContent}
+                submitButtonText="수정 완료"
+                placeholder="댓글 수정..."
+                onCancel={() => {
+                  setIsEditing(false);
+                  setEditContent(comment.content);
+                }}
+                autoFocus
+                className="!space-y-2"
+              />
+            </div>
+          ) : (
+            <p
+              className={`mt-1.5 leading-relaxed break-words ${
+                isDeleted
+                  ? "text-muted-foreground italic"
+                  : "text-foreground/90"
+              }`}
+            >
+              {comment.content}
+            </p>
+          )}
+
+          {/* 답글 - 삭제된 댓글이나 수정 중이 아닌 경우에만 표시 */}
+          {!isDeleted && !isEditing && !isReply && (
+            <div className="mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsReplying((prev) => !prev)}
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded-md"
+              >
+                <Reply className="h-3.5 w-3.5 mr-1" />
+                {isReplying ? "답글 취소" : "답글 달기"}
+              </Button>
+            </div>
+          )}
+
+          {/* 답글 작성 폼 */}
+          {isReplying && (
+            <div className="mt-3">
+              <CommentForm
+                onSubmit={handleReplyFormSubmit}
+                isSubmitting={isSubmittingReply}
+                placeholder={`${authorName}님에게 답글 작성...`}
+                submitButtonText="답글 등록"
+                autoFocus
+                onCancel={() => setIsReplying(false)}
+              />
+            </div>
+          )}
         </div>
       </div>
 
