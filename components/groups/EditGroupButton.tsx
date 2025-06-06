@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { GroupForm } from "@/components/groups/GroupForm";
 import { IGroup } from "@/types";
 import { useState } from "react";
+import { Edit } from "lucide-react";
 
 interface IUpdateGroupButtonProps {
   group: IGroup;
@@ -27,8 +28,8 @@ export const EditGroupButton = ({
   return (
     <Dialog open={open} onOpenChange={setOpen} modal={true}>
       <DialogTrigger asChild>
-        <Button variant="outline" onClick={handleButtonClick}>
-          수정
+        <Button variant="ghost" onClick={handleButtonClick} size="sm">
+          <Edit className="h-4 w-4 mr-1" /> 수정
         </Button>
       </DialogTrigger>
       <DialogContent>

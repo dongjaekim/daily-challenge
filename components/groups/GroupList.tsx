@@ -192,8 +192,7 @@ export function GroupList() {
                     }}
                     className="gap-1"
                   >
-                    <Trash className="h-3.5 w-3.5" />
-                    <span className="hidden xs:inline">삭제</span>
+                    <Trash className="h-4 w-4 mr-1" /> 삭제
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
