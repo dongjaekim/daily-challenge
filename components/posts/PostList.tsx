@@ -272,7 +272,7 @@ export function PostList({
               className="flex items-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <LikeButton
+              {/* <LikeButton
                 postId={post.id}
                 initialLikeCount={
                   typeof post.likeCount === "number" ? post.likeCount : 0
@@ -280,7 +280,7 @@ export function PostList({
                 initialLiked={post.isLiked || false}
                 size="sm"
                 variant="ghost"
-              />
+              /> */}
             </div>
             <div className="flex items-center text-sm text-muted-foreground gap-1">
               <MessageSquare className="h-4 w-4" />

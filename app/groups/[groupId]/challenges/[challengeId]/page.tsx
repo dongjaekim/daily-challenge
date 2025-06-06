@@ -56,11 +56,11 @@ export default async function ChallengePage({ params }: ChallengePageProps) {
               <Button>수정</Button>
             </DialogTrigger>
             <DialogContent>
-              <ChallengeForm
-                groupId={params.groupId}
+              {/* <ChallengeForm
+                
                 challengeId={params.challengeId}
                 initialData={formattedChallenge}
-              />
+              /> */}
             </DialogContent>
           </Dialog>
         )}
