@@ -1,10 +1,6 @@
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
-import {
-  dehydrate,
-  HydrationBoundary,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { groupQueryKeys, getGroup } from "@/lib/queries/groupQuery";
 import {
   challengeQueryKeys,
@@ -20,6 +16,7 @@ import {
   challengeRecordQueryKeys,
 } from "@/lib/queries/challengeRecordQuery";
 import ClientGroupPage from "@/components/groups/ClientGroupPage";
+import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 
 interface IGroupPageProps {
   params: {
@@ -41,7 +38,7 @@ export default async function GroupPage({
     return notFound();
   }
 
-  const queryClient = useQueryClient();
+  const queryClient = makeQueryClient();
 
   queryClient.prefetchQuery({
     queryKey: groupQueryKeys.getOne(params.groupId),

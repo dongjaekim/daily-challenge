@@ -2,7 +2,7 @@ import { getSupabaseUuid } from "@/utils/server-auth";
 import { ClientGroupListPage } from "@/components/groups/ClientGroupListPage";
 import { groupQueryKeys } from "@/lib/queries/groupQuery";
 import { getGroups } from "@/lib/queries/groupQuery";
-import { useQueryClient } from "@tanstack/react-query";
+import { makeQueryClient } from "@/lib/queries/makeQueryClient";
 
 export default async function GroupListPage() {
   const uuid = await getSupabaseUuid();
@@ -13,7 +13,7 @@ export default async function GroupListPage() {
     return null;
   }
 
-  const queryClient = useQueryClient();
+  const queryClient = makeQueryClient();
   queryClient.prefetchQuery({
     queryKey: groupQueryKeys.getAll(),
     queryFn: getGroups,
