@@ -135,48 +135,40 @@ export const useDeletePost = (
 };
 
 // 좋아요 토글
-export const useToggleLike = (groupId: string, postId: string) => {
+export const useToggleLike = (
+  groupId: string,
+  postId: string,
+  options?: Omit<
+    UseMutationOptions<Response, Error, void, unknown>,
+    "mutationFn"
+  >
+) => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (isLiked: boolean) =>
-      fetch(`/api/groups/${groupId}/posts/${postId}/like`, {
-        method: isLiked ? "POST" : "DELETE",
+  return useMutation<Response, Error, void, unknown>({
+    mutationFn: () =>
+      fetch(`/api/posts/${postId}/likes`, {
+        method: "POST",
       }),
-    onMutate: async (isLiked) => {
-      // 낙관적 업데이트
-      await queryClient.cancelQueries({
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({
         queryKey: postQueryKeys.getAll(groupId),
       });
 
-      const previousPosts = queryClient.getQueryData<IPost[]>(
-        postQueryKeys.getAll(groupId)
-      );
-
-      queryClient.setQueryData(
-        postQueryKeys.getAll(groupId),
-        (old: IPost[] = []) =>
-          old.map((post) =>
-            post.id === postId
-              ? {
-                  ...post,
-                  isLiked,
-                  likeCount: isLiked
-                    ? (post.likeCount || 0) + 1
-                    : Math.max(0, (post.likeCount || 0) - 1),
-                }
-              : post
-          )
-      );
-
-      return { previousPosts };
+      if (options?.onSuccess) {
+        options.onSuccess(data, variables, context);
+      }
     },
-    onError: (err, variables, context) => {
-      // 에러 발생 시 롤백
-      queryClient.setQueryData(
-        postQueryKeys.getAll(groupId),
-        context?.previousPosts
-      );
+    onError: (error, variables, context) => {
+      console.error(`Error toggling postLike ${postId}:`, error);
+      if (options?.onError) {
+        options.onError(error, variables, context);
+      }
+    },
+    onSettled: (data, error, variables, context) => {
+      if (options?.onSettled) {
+        options.onSettled(data, error, variables, context);
+      }
     },
   });
 };

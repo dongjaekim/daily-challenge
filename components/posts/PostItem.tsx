@@ -124,7 +124,10 @@ export function PostItem({ post, groupId, onPostClick }: PostItemProps) {
         </div>
       )}
 
-      <div className="flex items-center gap-3 sm:gap-4 text-muted-foreground pt-3 border-t">
+      <div
+        className="flex items-center gap-3 sm:gap-4 text-muted-foreground pt-3 border-t"
+        onClick={(e) => e.stopPropagation()}
+      >
         <LikeButton
           postId={post.id}
           initialLikeCount={post.likeCount || 0}

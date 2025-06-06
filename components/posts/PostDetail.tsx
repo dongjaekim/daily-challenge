@@ -270,7 +270,6 @@ export function PostDetail({
               size="default"
               variant="ghost"
               groupId={groupId}
-              className="text-muted-foreground hover:text-primary"
             />
           </CardFooter>
         </Card>
