@@ -441,18 +441,21 @@ export function PostForm({ groupId, postId }: IPostFormProps) {
   return (
     <>
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-2 rounded-full"
-            onClick={handleGoBack}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-semibold">
-            {isEditMode ? "게시글 수정" : "새 게시글 작성"}
-          </h1>
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0 rounded-full -ml-2 sm:ml-0"
+              onClick={handleGoBack}
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="sr-only">뒤로가기</span>
+            </Button>
+            <h1 className="text-lg font-semibold truncate">
+              {isEditMode ? "게시글 수정" : "새 게시글 작성"}
+            </h1>
+          </div>
         </div>
       </header>
 

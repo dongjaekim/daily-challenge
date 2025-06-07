@@ -44,37 +44,45 @@ export function ClientChallenges({
 
   return (
     <div className="container mx-auto max-w-5xl py-8 px-4 sm:px-6 lg:px-8 space-y-8">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.push(`/groups/${groupId}`)}
-            className="flex-shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">챌린지 관리</h1>
-            <p className="text-muted-foreground mt-1">
-              모임의 목표를 설정하고 관리하세요.
-            </p>
+      <header className="mb-8 md:mb-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push(`/groups/${groupId}`)}
+              className="flex-shrink-0 rounded-full"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="sr-only">뒤로가기</span>
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">챌린지 관리</h1>
+              <p className="text-muted-foreground mt-1">
+                모임의 목표를 설정하고 관리하세요.
+              </p>
+            </div>
+          </div>
+          <div className="w-full sm:w-auto flex-shrink-0">
+            <Dialog
+              open={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />새 챌린지 생성
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <ChallengeForm
+                  onSubmit={(data) => createChallenge(data)}
+                  isSubmitting={isCreating}
+                  onClose={() => setIsCreateDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />새 챌린지 생성
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <ChallengeForm
-              onSubmit={(data) => createChallenge(data)}
-              isSubmitting={isCreating}
-              onClose={() => setIsCreateDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
       </header>
       <main>
         <ChallengeList groupId={groupId} currentUserId={currentUserId} />

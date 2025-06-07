@@ -84,16 +84,16 @@ const POST_ITEM_STYLE_CONSTANTS = {
   PROFILE_AREA_HEIGHT_MOBILE: 40, // 아바타 36px + 여유
   CONTENT_LINE_HEIGHT_DESKTOP: 24, // text-base (1rem * 1.5)
   CONTENT_LINE_HEIGHT_MOBILE: 20, // text-sm (0.875rem * 1.4 approx)
-  CHALLENGE_TAG_AREA_ONE_LINE_HEIGHT: 28, // 태그 한 줄 높이 (py-1, 폰트, pt-1 컨테이너 패딩 포함)
-  IMAGE_AREA_CALCULATED_HEIGHT_DESKTOP: 205,
-  IMAGE_AREA_CALCULATED_HEIGHT_MOBILE: 58,
-  IMAGE_AREA_PT: 8, // pt-2 for image grid
-  ACTION_BUTTON_AREA_HEIGHT: 45, // 아이콘/텍스트 높이 + pt-3 (12px) + border-t (1px)
+  CHALLENGE_TAG_AREA_ONE_LINE_HEIGHT: 22, // 태그 한 줄 높이 (py-1, 폰트, pt-1 컨테이너 패딩 포함)
+  IMAGE_AREA_CALCULATED_HEIGHT_DESKTOP: 195,
+  IMAGE_AREA_CALCULATED_HEIGHT_MOBILE: 90,
+  IMAGE_AREA_PT: 4, // pt-2 for image grid
+  ACTION_BUTTON_AREA_HEIGHT: 61, // 아이콘/텍스트 높이 + pt-3 (12px) + border-t (1px)
   MIN_CALCULATED_HEIGHT_DESKTOP: 140, // 내용이 거의 없을 때의 최소 추정 높이
   MIN_CALCULATED_HEIGHT_MOBILE: 120,
   MAX_CALCULATED_HEIGHT: 700, // 최대 추정 높이
   CONTENT_CHARS_PER_LINE_DESKTOP: 111,
-  CONTENT_CHARS_PER_LINE_MOBILE: 34,
+  CONTENT_CHARS_PER_LINE_MOBILE: 35,
 };
 
 export function GroupPostsView({ groupId }: GroupPostsViewProps) {
