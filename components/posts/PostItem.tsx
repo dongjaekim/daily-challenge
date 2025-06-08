@@ -5,8 +5,6 @@ import NextImage from "next/image";
 import { IPost, IChallenge } from "@/types";
 import { LikeButton } from "@/components/posts/LikeButton";
 import { MessageSquare, ImageOff } from "lucide-react";
-import { ko } from "date-fns/locale";
-import { format } from "date-fns";
 import {
   Card,
   CardContent,
@@ -15,27 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-
-// 게시글 작성 시간 표시 함수
-function getDisplayTime(dateString: string) {
-  const now = new Date();
-  const postDate = new Date(dateString);
-  const diffMs = now.getTime() - postDate.getTime();
-  const diffSeconds = Math.round(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-
-  if (diffHours < 24) {
-    // 하루 이내면 "n시간 전", "n분 전" 등 상대시간
-    if (diffMinutes < 1) return "방금 전";
-    if (diffMinutes < 60) return `${diffMinutes}분 전`;
-    return `${diffHours}시간 전`;
-  } else if (now.getFullYear() === postDate.getFullYear()) {
-    return format(postDate, "M월 d일 a h:mm", { locale: ko });
-  } else {
-    return format(postDate, "yyyy년 M월 d일 a h:mm", { locale: ko });
-  }
-}
+import { getDisplayTime } from "@/utils/display-time";
 
 interface PostItemProps {
   post: IPost;

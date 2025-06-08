@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CommentForm } from "./CommentForm";
@@ -37,26 +35,7 @@ import {
   useUpdateComment,
   useDeleteComment,
 } from "@/lib/mutations/commentMutations"; // 모든 댓글 뮤테이션 훅 임포트
-
-function getDisplayTime(dateString: string) {
-  const now = new Date();
-  const postDate = new Date(dateString);
-  const diffMs = now.getTime() - postDate.getTime();
-  const diffSeconds = Math.round(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-
-  if (diffHours < 24) {
-    // 하루 이내면 "n시간 전", "n분 전" 등 상대시간
-    if (diffMinutes < 1) return "방금 전";
-    if (diffMinutes < 60) return `${diffMinutes}분 전`;
-    return `${diffHours}시간 전`;
-  } else if (now.getFullYear() === postDate.getFullYear()) {
-    return format(postDate, "M월 d일 a h:mm", { locale: ko });
-  } else {
-    return format(postDate, "yyyy년 M월 d일 a h:mm", { locale: ko });
-  }
-}
+import { getDisplayTime } from "@/utils/display-time";
 
 interface CommentProps {
   comment: IPostComment;
