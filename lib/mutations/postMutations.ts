@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { postQueryKeys } from "../queries/postQuery";
 import { IPost } from "@/types";
+import { challengeRecordQueryKeys } from "../queries/challengeRecordQuery";
 
 // 게시글 생성
 export const useCreatePost = (groupId: string) => {
@@ -27,6 +28,10 @@ export const useCreatePost = (groupId: string) => {
       // posts 관련 캐시 무효화
       queryClient.invalidateQueries({
         queryKey: postQueryKeys.getAll(groupId),
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: challengeRecordQueryKeys.getAll(groupId),
         exact: false,
       });
     },
@@ -115,7 +120,10 @@ export const useDeletePost = (
       queryClient.invalidateQueries({
         queryKey: postQueryKeys.getAll(groupId),
       });
-
+      queryClient.invalidateQueries({
+        queryKey: challengeRecordQueryKeys.getAll(groupId),
+        exact: false,
+      });
       if (options?.onSuccess) {
         options.onSuccess(data, postId, context);
       }

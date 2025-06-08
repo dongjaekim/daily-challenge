@@ -13,15 +13,8 @@ import {
   startOfWeek,
   endOfWeek,
 } from "date-fns";
-import { convertToKST } from "@/utils/date";
 import { ko } from "date-fns/locale";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import {
@@ -30,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IChallenge, IChallengeRecord } from "@/types";
+import { IChallengeRecord } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import {
   getChallenges,
@@ -128,8 +121,7 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
 
   // KST 날짜 변환 (UTC+9) 함수
   const convertToKstDate = (utcDateStr: string) => {
-    // 공통 유틸리티 함수를 사용하여 UTC에서 KST로 변환
-    const kstDate = convertToKST(utcDateStr);
+    const kstDate = new Date(utcDateStr);
 
     // YYYY-MM-DD 형식으로 변환
     const year = kstDate.getFullYear();
@@ -161,7 +153,6 @@ export function GroupCalendarView({ groupId }: IGroupCalendarViewProps) {
         console.error("날짜 처리 오류:", e, record);
       }
     });
-
     return result;
   }, [records]);
 
