@@ -89,7 +89,7 @@ export async function DELETE(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // 게시글 조회
+    // 댓글 조회
     const { data: comment, error: commentError } = await supabase
       .from("post_comments")
       .select("*")
