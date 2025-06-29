@@ -1,6 +1,7 @@
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { NextResponse } from "next/server";
 import { supabaseDb } from "@/db";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(
   req: Request,
@@ -44,16 +45,19 @@ export async function GET(
     }
 
     // 그룹 멤버 조회
-    const memberArr = await supabaseDb.select("group_members", {
-      group_id: params.groupId,
-    });
+    const { data } = await supabase
+      .from("group_members")
+      .select(
+        `
+      *,
+      user:user_id (
+        id, name, email, avatar_url
+      )
+    `
+      )
+      .eq("group_id", params.groupId);
 
-    // 그룹 멤버 여부 확인
-    if (memberArr.some((m: any) => m.user_id === uuid)) {
-      return new NextResponse("Not member of this group", { status: 404 });
-    }
-
-    return NextResponse.json(memberArr);
+    return NextResponse.json(data || []);
   } catch (error) {
     console.error("[MEMBERS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

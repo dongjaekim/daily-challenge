@@ -241,7 +241,7 @@ export default function ClientGroupPage({
         </TabsContent>
 
         <TabsContent value="stats" className="mt-4 md:mt-8">
-          <GroupStatsView groupId={groupId} />
+          <GroupStatsView groupId={groupId} currentUserId={uuid} />
         </TabsContent>
       </Tabs>
     </div>

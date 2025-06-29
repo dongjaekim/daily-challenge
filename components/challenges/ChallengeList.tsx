@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { format, formatISO, startOfMonth, endOfMonth } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
   getChallenges,
@@ -84,6 +84,12 @@ export function ChallengeList({ groupId, currentUserId }: IChallengeListProps) {
   );
   const router = useRouter();
 
+  const now = new Date();
+  const thisMonthStart = formatISO(startOfMonth(now), {
+    representation: "date",
+  });
+  const thisMonthEnd = formatISO(endOfMonth(now), { representation: "date" });
+
   const {
     data: challenges,
     isLoading: isChallengeLoading,
@@ -102,11 +108,16 @@ export function ChallengeList({ groupId, currentUserId }: IChallengeListProps) {
 
   const { data: challengeRecords, isLoading: isChallengeRecordLoading } =
     useQuery({
-      queryKey: challengeRecordQueryKeys.getAll(groupId),
+      queryKey: challengeRecordQueryKeys.getFilteredList(groupId, {
+        userId: currentUserId,
+        startDate: thisMonthStart,
+        endDate: thisMonthEnd,
+      }),
       queryFn: () =>
         getChallengeRecords(groupId, {
           userId: currentUserId,
-          monthly: "true",
+          startDate: thisMonthStart,
+          endDate: thisMonthEnd,
         }),
     });
 

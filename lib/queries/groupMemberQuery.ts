@@ -9,7 +9,7 @@ export const groupMemberQueryKeys = {
 export const getGroupMembers = async (
   groupId: string
 ): Promise<IGroupMember[]> => {
-  const res = await fetch(`/api/groups/${groupId}/challenges`);
+  const res = await fetch(`/api/groups/${groupId}/members`);
   return res.json();
 };
 

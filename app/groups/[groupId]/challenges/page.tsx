@@ -3,8 +3,12 @@ export const dynamic = "force-dynamic";
 import { ClientChallenges } from "@/components/challenges/ClientChallenges";
 import { getSupabaseUuid } from "@/utils/server-auth";
 import { notFound } from "next/navigation";
-import { makeQueryClient } from "@/lib/queries/makeQueryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { formatISO, startOfMonth, endOfMonth } from "date-fns";
+import {
+  dehydrate,
+  HydrationBoundary,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   challengeQueryKeys,
   getChallenges,
@@ -32,7 +36,13 @@ export default async function ChallengesPage({ params }: IChallengesPageProps) {
     return notFound();
   }
 
-  const queryClient = makeQueryClient();
+  const queryClient = useQueryClient();
+
+  const now = new Date();
+  const thisMonthStart = formatISO(startOfMonth(now), {
+    representation: "date",
+  });
+  const thisMonthEnd = formatISO(endOfMonth(now), { representation: "date" });
 
   queryClient.prefetchQuery({
     queryKey: challengeQueryKeys.getAll(params.groupId),
@@ -40,9 +50,17 @@ export default async function ChallengesPage({ params }: IChallengesPageProps) {
   });
 
   queryClient.prefetchQuery({
-    queryKey: challengeRecordQueryKeys.getAll(params.groupId),
+    queryKey: challengeRecordQueryKeys.getFilteredList(params.groupId, {
+      userId: uuid,
+      startDate: thisMonthStart,
+      endDate: thisMonthEnd,
+    }),
     queryFn: () =>
-      getChallengeRecords(params.groupId, { userId: uuid, monthly: "true" }),
+      getChallengeRecords(params.groupId, {
+        userId: uuid,
+        startDate: thisMonthStart,
+        endDate: thisMonthEnd,
+      }),
   });
 
   queryClient.prefetchQuery({

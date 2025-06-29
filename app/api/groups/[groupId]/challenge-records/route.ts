@@ -63,7 +63,8 @@ export async function GET(
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
-    const monthly = searchParams.get("monthly");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
 
     // 직접 쿼리 작성 - challenge_progress 테이블과 users, challenges 테이블 조인
     let query = supabase
@@ -85,18 +86,11 @@ export async function GET(
       query = query.eq("user_id", userId);
     }
 
-    // 시작일 필터
-    if (monthly) {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        .toISOString()
-        .split("T")[0];
-      query = query
-        .gte("created_at", `${startOfMonth}T00:00:00`)
-        .lte("created_at", `${endOfMonth}T23:59:59`);
+    if (startDate) {
+      query = query.gte("created_at", `${startDate}T00:00:00`);
+    }
+    if (endDate) {
+      query = query.lte("created_at", `${endDate}T23:59:59`);
     }
 
     // 쿼리 실행 및 정렬
