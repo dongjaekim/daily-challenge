@@ -15,7 +15,7 @@ export function Header() {
               모임
             </Link>
           </nav>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton afterSignOutUrl="/sign-in" />
         </div>
       </div>
     </header>

@@ -18,11 +18,11 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="ko">
-        <body className={inter.className}>
+      <html lang="ko" className="h-full">
+        <body className={`${inter.className} flex h-full flex-col`}>
           <Toaster />
           <Header />
-          <main className="container mx-auto px-4 md:px-6 py-6 max-w-6xl">
+          <main className="flex-grow">
             <Providers>{children}</Providers>
           </main>
         </body>

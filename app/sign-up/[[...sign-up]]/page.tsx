@@ -1,20 +1,36 @@
-'use client'
+"use client";
 
-import { SignUp } from '@clerk/nextjs'
+import { SignUp } from "@clerk/nextjs";
 
 export default function SignUpPage() {
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]">
-      <div className="w-full max-w-md rounded-lg border p-8 bg-card shadow mx-4">
-        <SignUp
-          appearance={{
-            elements: {
-              formButtonPrimary: 'bg-primary hover:bg-primary/90',
-              footerActionLink: 'text-primary hover:text-primary/90',
-            },
-          }}
-        />
+    <div className="grid h-full w-full lg:grid-cols-2">
+      <div className="flex justify-center items-start pt-4 sm:items-center sm:p-12 sm:pt-6">
+        <div className="max-w-md">
+          <SignUp
+            appearance={{
+              elements: {
+                card: "border-none shadow-none",
+                formButtonPrimary: "bg-primary hover:bg-primary/90",
+                footerActionLink: "text-primary hover:text-primary/90",
+              },
+            }}
+          />
+        </div>
+      </div>
+      <div className="hidden items-center justify-center bg-muted p-12 text-center lg:flex">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            챌린지 앱에 오신 것을 환영합니다🙌🏻
+          </h1>
+          <p className="mt-4 text-muted-foreground">
+            개인적인 챌린지를 설정하고 일일 달성 여부를 관리하는 서비스입니다.
+          </p>
+          <p className="text-muted-foreground">
+            모임을 만들어 함께 챌린지를 달성해보세요!
+          </p>
+        </div>
       </div>
     </div>
-  )
-} 
+  );
+}
